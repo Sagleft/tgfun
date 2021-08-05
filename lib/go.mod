@@ -1,4 +1,4 @@
-module github.com/Sagleft/tgfun
+module github.com/Sagleft/tgfun/lib
 
 go 1.16
 
