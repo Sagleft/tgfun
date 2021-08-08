@@ -38,6 +38,18 @@ func main() {
 		},
 	}
 
+	/*container := struct {
+		Data   tgfun.FunnelData   `json:"data"`
+		Script tgfun.FunnelScript `json:"script"`
+	}{
+		Data:   data,
+		Script: script,
+	}
+
+	bytes, _ := json.Marshal(container)
+	fmt.Println(string(bytes))
+	fmt.Println()*/
+
 	// create funnel
 	funnel, err := tgfun.NewFunnel(data, script)
 	// check error
