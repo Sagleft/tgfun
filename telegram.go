@@ -119,6 +119,7 @@ func (f *Funnel) handleEvent(
 		Menu:           menu,
 		ParseMode:      parseMode,
 		Bot:            f.bot,
+		ImageRoot:      f.ImageRoot,
 	}
 
 	// build message
@@ -146,7 +147,13 @@ func (q *queryHandler) buildMessage() interface{} {
 	if strings.Contains(q.EventData.Message.Image, "http") {
 		photo.File = tb.FromURL(q.EventData.Message.Image)
 	} else {
-		photo.File = tb.FromDisk(q.EventData.Message.Image)
+
+		imgPath := q.ImageRoot
+		if !strings.HasSuffix(imgPath, "/") {
+			imgPath += "/"
+		}
+		imgPath += q.EventData.Message.Image
+		photo.File = tb.FromDisk(imgPath)
 	}
 	if q.EventData.Message.Text != "" {
 		photo.Caption = q.EventData.Message.Text

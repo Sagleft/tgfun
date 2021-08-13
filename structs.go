@@ -7,8 +7,9 @@ import (
 // Funnel - telegram bot funnel
 type Funnel struct {
 	// public
-	Data   FunnelData
-	Script FunnelScript
+	ImageRoot string
+	Data      FunnelData
+	Script    FunnelScript
 
 	// protected
 	bot *tb.Bot
@@ -49,4 +50,5 @@ type queryHandler struct {
 	Menu           *tb.ReplyMarkup
 	ParseMode      tb.ParseMode
 	Bot            *tb.Bot
+	ImageRoot      string // inherit from Funnel
 }
