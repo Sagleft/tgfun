@@ -2,4 +2,4 @@ module github.com/Sagleft/tgfun
 
 go 1.16
 
-require gopkg.in/tucnak/telebot.v2 v2.3.5
+require github.com/Sagleft/telegobot v1.0.0

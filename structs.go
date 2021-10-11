@@ -1,7 +1,7 @@
 package tgfun
 
 import (
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "github.com/Sagleft/telegobot"
 )
 
 // Funnel - telegram bot funnel

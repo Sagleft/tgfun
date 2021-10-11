@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	tb "gopkg.in/tucnak/telebot.v2"
+	tb "github.com/Sagleft/telegobot"
 )
 
 func (f *Funnel) setupBot() error {
