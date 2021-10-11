@@ -141,9 +141,7 @@ func (q *queryHandler) buildMessage() interface{} {
 		}
 		return q.EventData.Message.Text
 	}
-	photo := &tb.Photo{
-		ParseMode: parseMode,
-	}
+	photo := &tb.Photo{}
 	if strings.Contains(q.EventData.Message.Image, "http") {
 		photo.File = tb.FromURL(q.EventData.Message.Image)
 	} else {
