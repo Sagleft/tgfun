@@ -120,6 +120,7 @@ func (f *Funnel) handleEvent(
 		ParseMode:      parseMode,
 		Bot:            f.bot,
 		ImageRoot:      f.ImageRoot,
+		Features:       &f.features,
 	}
 
 	// build message
@@ -160,12 +161,40 @@ func (q *queryHandler) buildMessage() interface{} {
 }
 
 func (q *queryHandler) handleMessage(m *tb.Message) {
+	if m.Chat.ID == q.Features.Users.AdminChatID {
+		q.handleAdminMessage(m)
+		return
+	}
+
 	msg := q.buildMessage()
 	q.buildButtons()
 
-	_, err := q.Bot.Send(m.Sender, msg, q.Menu, parseMode)
+	_, err := q.Features.Users.getUserData(m.Sender)
+	if err != nil {
+		log.Println(err)
+	}
+
+	_, err = q.Bot.Send(m.Sender, msg, q.Menu, parseMode)
 	if err != nil {
 		log.Println("failed to send query handler (from message) message: " + err.Error())
+	}
+}
+
+func (q *queryHandler) handleAdminMessage(m *tb.Message) {
+	if !strings.HasPrefix(m.Text, adminPostToAllPrefix) {
+		q.Bot.Send(m.Sender, "Не могу разобрать сообщение")
+		return
+	}
+
+	adminPostText := strings.Replace(m.Text, adminPostToAllPrefix, "", 1)
+	telegramUserIDs, err := q.Features.Users.getUsersTelegramIDs()
+	if err != nil {
+		q.Bot.Send(tb.ChatID(q.Features.Users.AdminChatID), err.Error(), parseMode)
+		return
+	}
+
+	for _, telegramUserID := range telegramUserIDs {
+		q.Bot.Send(tb.ChatID(telegramUserID), adminPostText, parseMode)
 	}
 }
 

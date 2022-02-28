@@ -1,6 +1,8 @@
 package tgfun
 
 import (
+	"database/sql"
+
 	tb "github.com/Sagleft/telegobot"
 )
 
@@ -12,7 +14,29 @@ type Funnel struct {
 	Script    FunnelScript
 
 	// protected
-	bot *tb.Bot
+	bot      *tb.Bot
+	features funnelFeatures
+}
+
+type funnelFeatures struct {
+	Users *UsersFeature
+}
+
+// UsersFeature - feature to enable users db
+type UsersFeature struct {
+	// required
+	DBConn    *sql.DB
+	TableName string
+
+	// optional
+	AdminChatID int64
+}
+
+type userData struct {
+	ID         int64
+	TelegramID int64
+	Name       string
+	TgName     string
 }
 
 // FunnelData - data container for Funnel struct
@@ -51,4 +75,5 @@ type queryHandler struct {
 	ParseMode      tb.ParseMode
 	Bot            *tb.Bot
 	ImageRoot      string // inherit from Funnel
+	Features       *funnelFeatures
 }

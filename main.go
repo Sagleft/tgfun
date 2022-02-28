@@ -11,3 +11,8 @@ func NewFunnel(data FunnelData, script FunnelScript) (*Funnel, error) {
 		f.setupBot,
 	)
 }
+
+// EnableUsersFeature !
+func (f *Funnel) EnableUsersFeature(feature UsersFeature) {
+	f.features.Users = &feature
+}

@@ -1,5 +1,5 @@
-github.com/Sagleft/telegobot v1.0.0 h1:Elov/FGZBaJMXUeUX3xA4gsKSawIsI9RAEil3ntXT9k=
-github.com/Sagleft/telegobot v1.0.0/go.mod h1:qhGsXj1eYZoGvzmCh2ErZOvl9ESD1S6LAqf4oUZczA4=
+github.com/Sagleft/telegobot v1.0.2 h1:et+fIVfF/cHOdQuPcMjdTTWzax+9aQuDw80YciNjDg4=
+github.com/Sagleft/telegobot v1.0.2/go.mod h1:qhGsXj1eYZoGvzmCh2ErZOvl9ESD1S6LAqf4oUZczA4=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
