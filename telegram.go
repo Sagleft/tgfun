@@ -45,6 +45,7 @@ func (f *Funnel) createBindings() error {
 	return checkErrors(
 		f.handleStartMessage,
 		f.handleScriptEvents,
+		f.handleTextEvents,
 	)
 }
 
@@ -106,6 +107,17 @@ func (f *Funnel) handleScriptEvents() error {
 	return nil
 }
 
+func (f *Funnel) handleTextEvents() error {
+	f.bot.Handle(tb.OnText, f.handleTextMessage)
+	return nil
+}
+
+func (f *Funnel) handleTextMessage(m *tb.Message) {
+	if m.Chat.ID == f.features.Users.AdminChatID {
+		f.handleAdminMessage(m)
+	}
+}
+
 func (f *Funnel) handleEvent(
 	eventMessageID string,
 	eventData FunnelEvent,
@@ -127,11 +139,12 @@ func (f *Funnel) handleEvent(
 	if strings.Contains(eventMessageID, "/") {
 		// command or text message
 		f.bot.Handle(eventMessageID, q.handleMessage)
-	} else {
-		// button query
-		btnListener := menu.Data("listener", eventMessageID)
-		f.bot.Handle(&btnListener, q.handleButton)
+		return nil
 	}
+
+	// button query
+	btnListener := menu.Data("listener", eventMessageID)
+	f.bot.Handle(&btnListener, q.handleButton)
 	return nil
 }
 
@@ -161,11 +174,6 @@ func (q *queryHandler) buildMessage() interface{} {
 }
 
 func (q *queryHandler) handleMessage(m *tb.Message) {
-	if m.Chat.ID == q.Features.Users.AdminChatID {
-		q.handleAdminMessage(m)
-		return
-	}
-
 	msg := q.buildMessage()
 	q.buildButtons()
 
@@ -180,21 +188,21 @@ func (q *queryHandler) handleMessage(m *tb.Message) {
 	}
 }
 
-func (q *queryHandler) handleAdminMessage(m *tb.Message) {
+func (f *Funnel) handleAdminMessage(m *tb.Message) {
 	if !strings.HasPrefix(m.Text, adminPostToAllPrefix) {
-		q.Bot.Send(m.Sender, "Не могу разобрать сообщение")
+		f.bot.Send(m.Sender, "Не могу разобрать сообщение")
 		return
 	}
 
 	adminPostText := strings.Replace(m.Text, adminPostToAllPrefix, "", 1)
-	telegramUserIDs, err := q.Features.Users.getUsersTelegramIDs()
+	telegramUserIDs, err := f.features.Users.getUsersTelegramIDs()
 	if err != nil {
-		q.Bot.Send(tb.ChatID(q.Features.Users.AdminChatID), err.Error(), parseMode)
+		f.bot.Send(tb.ChatID(f.features.Users.AdminChatID), err.Error(), parseMode)
 		return
 	}
 
 	for _, telegramUserID := range telegramUserIDs {
-		q.Bot.Send(tb.ChatID(telegramUserID), adminPostText, parseMode)
+		f.bot.Send(tb.ChatID(telegramUserID), adminPostText, parseMode)
 	}
 }
 
