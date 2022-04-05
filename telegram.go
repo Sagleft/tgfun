@@ -202,7 +202,7 @@ func (f *Funnel) handleAdminMessage(m *tb.Message) {
 	}
 
 	for _, telegramUserID := range telegramUserIDs {
-		f.bot.Send(tb.ChatID(telegramUserID), adminPostText, parseMode)
+		f.bot.Send(tb.ChatID(telegramUserID), adminPostText, tb.ModeHTML)
 	}
 }
 
