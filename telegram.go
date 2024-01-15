@@ -185,6 +185,8 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 }
 
 func (q *queryHandler) handleButton(c tb.Context) error {
+	defer c.Respond()
+
 	msg := q.buildMessage()
 	q.buildButtons()
 
