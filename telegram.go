@@ -61,7 +61,6 @@ func (f *Funnel) Run() error {
 }
 
 func (f *Funnel) handleStartMessage() error {
-	menu := tb.ReplyMarkup{}
 	parseMode := tb.ParseMode(parseMode)
 
 	startEvent, isStartMessageFound := f.Script[startMessageCode]
@@ -69,11 +68,10 @@ func (f *Funnel) handleStartMessage() error {
 		return errors.New("start message not found in script")
 	}
 
-	return f.handleEvent(startMessageCode, startEvent, &menu, parseMode)
+	return f.handleEvent(startMessageCode, startEvent, parseMode)
 }
 
 func (f *Funnel) handleScriptEvents() error {
-	menu := tb.ReplyMarkup{}
 	parseMode := tb.ParseMode(parseMode)
 
 	for eventMessageID, eventData := range f.Script {
@@ -81,7 +79,7 @@ func (f *Funnel) handleScriptEvents() error {
 			continue
 		}
 
-		err := f.handleEvent(eventMessageID, eventData, &menu, parseMode)
+		err := f.handleEvent(eventMessageID, eventData, parseMode)
 		if err != nil {
 			return fmt.Errorf("handle event: %w", err)
 		}
@@ -108,14 +106,15 @@ func (f *Funnel) handleTextMessage(c tb.Context) error {
 func (f *Funnel) handleEvent(
 	eventMessageID string,
 	eventData FunnelEvent,
-	menu *tb.ReplyMarkup,
 	parseMode tb.ParseMode,
 ) error {
+	menu := tb.ReplyMarkup{}
+
 	// create message handler
 	q := queryHandler{
 		EventMessageID: eventMessageID,
 		EventData:      eventData,
-		Menu:           menu,
+		Menu:           &menu,
 		ParseMode:      parseMode,
 		Bot:            f.bot,
 		ImageRoot:      f.Data.ImageRoot,
