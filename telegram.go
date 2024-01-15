@@ -10,11 +10,29 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
+func (f *Funnel) formatMessages() {
+	for key, value := range f.Script {
+		value.Message.Text = formatMessage(f.Script[key].Message.Text)
+		f.Script[key] = value
+	}
+}
+
+func formatMessage(message string) string {
+	var result []string
+	lines := strings.Split(message, "\n\n")
+	for _, val := range lines {
+		result = append(result, strings.Trim(val, " "))
+	}
+	return strings.Join(result, "\n\n")
+}
+
 // Run funnel. This is a non-blocking operation
 func (f *Funnel) Run() error {
 	if f.Data.Token == "" {
 		return errors.New("bot token is not set")
 	}
+
+	f.formatMessages()
 
 	var err error
 	f.bot, err = tb.NewBot(tb.Settings{
