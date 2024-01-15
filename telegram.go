@@ -33,9 +33,7 @@ func (f *Funnel) Run() error {
 		return fmt.Errorf("handle script events: %w", err)
 	}
 
-	if err := f.handleTextEvents(); err != nil {
-		return fmt.Errorf("handle text events: %w", err)
-	}
+	f.handleTextEvents()
 
 	go f.bot.Start()
 	return nil
@@ -45,12 +43,12 @@ func (f *Funnel) handleStartMessage() error {
 	menu := tb.ReplyMarkup{}
 	parseMode := tb.ParseMode(parseMode)
 
-	startEvent, isStartMessageFound := f.Script[startMessageID]
+	startEvent, isStartMessageFound := f.Script[startMessageCode]
 	if !isStartMessageFound {
 		return errors.New("start message not found in script")
 	}
 
-	return f.handleEvent(startMessageID, startEvent, &menu, parseMode)
+	return f.handleEvent(startMessageCode, startEvent, &menu, parseMode)
 }
 
 func (f *Funnel) handleScriptEvents() error {
@@ -58,25 +56,28 @@ func (f *Funnel) handleScriptEvents() error {
 	parseMode := tb.ParseMode(parseMode)
 
 	for eventMessageID, eventData := range f.Script {
-		if eventMessageID == startMessageID {
+		if eventMessageID == startMessageCode {
 			continue
 		}
 
 		err := f.handleEvent(eventMessageID, eventData, &menu, parseMode)
 		if err != nil {
-			return err
+			return fmt.Errorf("handle event: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (f *Funnel) handleTextEvents() error {
+func (f *Funnel) handleTextEvents() {
 	f.bot.Handle(tb.OnText, f.handleTextMessage)
-	return nil
 }
 
 func (f *Funnel) handleTextMessage(c tb.Context) error {
+	if f.features.Users == nil {
+		return nil
+	}
+
 	if c.Chat().ID == f.features.Users.AdminChatID {
 		return f.handleAdminMessage(c)
 	}

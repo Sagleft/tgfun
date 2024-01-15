@@ -1,9 +1,7 @@
 package tgfun
 
 const (
-	startMessageID          = "/start"
-	parseMode               = "Markdown"
-	botCheckCronTimeSeconds = 30
-
+	startMessageCode     = "/start"
+	parseMode            = "Markdown"
 	adminPostToAllPrefix = "!all"
 )
