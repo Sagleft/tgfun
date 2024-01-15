@@ -22,7 +22,7 @@ func formatMessage(message string) string {
 	lines := strings.Split(message, "\n\n")
 	for _, val := range lines {
 		val = strings.Trim(val, " ")
-		val = strings.Trim(val, "	")
+		val = strings.ReplaceAll(val, "	", "")
 
 		result = append(result, val)
 	}
