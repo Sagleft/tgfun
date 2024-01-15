@@ -9,9 +9,8 @@ import (
 // Funnel - telegram bot funnel
 type Funnel struct {
 	// public
-	ImageRoot string
-	Data      FunnelData
-	Script    FunnelScript
+	Data   FunnelData
+	Script FunnelScript
 
 	// protected
 	bot      *tb.Bot
@@ -41,7 +40,8 @@ type userData struct {
 
 // FunnelData - data container for Funnel struct
 type FunnelData struct {
-	Token string `json:"token"`
+	Token     string `json:"token"`
+	ImageRoot string `json:"imageRoot"`
 }
 
 // FunnelEvent - user interaction event

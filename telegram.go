@@ -118,7 +118,7 @@ func (f *Funnel) handleEvent(
 		Menu:           menu,
 		ParseMode:      parseMode,
 		Bot:            f.bot,
-		ImageRoot:      f.ImageRoot,
+		ImageRoot:      f.Data.ImageRoot,
 		Features:       &f.features,
 	}
 
