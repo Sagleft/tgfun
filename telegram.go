@@ -21,7 +21,10 @@ func formatMessage(message string) string {
 	var result []string
 	lines := strings.Split(message, "\n\n")
 	for _, val := range lines {
-		result = append(result, strings.Trim(val, " "))
+		val = strings.Trim(val, " ")
+		val = strings.Trim(val, "	")
+
+		result = append(result, val)
 	}
 	return strings.Join(result, "\n\n")
 }
