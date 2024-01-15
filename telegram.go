@@ -2,14 +2,16 @@ package tgfun
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
-	tb "github.com/Sagleft/telegobot"
+	tb "gopkg.in/telebot.v3"
 )
 
-func (f *Funnel) setupBot() error {
+// Run funnel. This is a non-blocking operation
+func (f *Funnel) Run() error {
 	if f.Data.Token == "" {
 		return errors.New("bot token is not set")
 	}
@@ -22,59 +24,21 @@ func (f *Funnel) setupBot() error {
 	if err != nil {
 		return errors.New("failed to setup telegram bot: " + err.Error())
 	}
-	return nil
-}
 
-// Run funnel. This is a non-blocking operation
-func (f *Funnel) Run() error {
-	err := f.createBindings()
-	if err != nil {
-		return err
+	if err := f.handleStartMessage(); err != nil {
+		return fmt.Errorf("handle start message: %w", err)
 	}
 
-	// check telegram bot connection in cron
-	checkBotCron := newCronHandler(f.checkBot, time.Second*botCheckCronTimeSeconds)
-	go checkBotCron.run()
+	if err := f.handleScriptEvents(); err != nil {
+		return fmt.Errorf("handle script events: %w", err)
+	}
 
-	// listen requests
+	if err := f.handleTextEvents(); err != nil {
+		return fmt.Errorf("handle text events: %w", err)
+	}
+
 	go f.bot.Start()
 	return nil
-}
-
-func (f *Funnel) createBindings() error {
-	return checkErrors(
-		f.handleStartMessage,
-		f.handleScriptEvents,
-		f.handleTextEvents,
-	)
-}
-
-func (f *Funnel) checkBot() {
-	if f.bot == nil {
-		// bot is not initiated
-		err := f.setupBot()
-		if err != nil {
-			log.Fatalln(err)
-		}
-		return
-	}
-
-	// bot already initiated. send test query
-	_, err := f.bot.GetCommands()
-	if err == nil {
-		return
-	}
-	log.Println("failed to get bot updates: " + err.Error())
-	log.Println("trying to reconnect")
-
-	// re-setup bot
-	err = checkErrors(
-		f.setupBot,
-		f.createBindings,
-	)
-	if err != nil {
-		log.Println(err)
-	}
 }
 
 func (f *Funnel) handleStartMessage() error {
@@ -112,10 +76,11 @@ func (f *Funnel) handleTextEvents() error {
 	return nil
 }
 
-func (f *Funnel) handleTextMessage(m *tb.Message) {
-	if m.Chat.ID == f.features.Users.AdminChatID {
-		f.handleAdminMessage(m)
+func (f *Funnel) handleTextMessage(c tb.Context) error {
+	if c.Chat().ID == f.features.Users.AdminChatID {
+		return f.handleAdminMessage(c)
 	}
+	return nil
 }
 
 func (f *Funnel) handleEvent(
@@ -173,47 +138,59 @@ func (q *queryHandler) buildMessage() interface{} {
 	return photo
 }
 
-func (q *queryHandler) handleMessage(m *tb.Message) {
+func (q *queryHandler) handleMessage(c tb.Context) error {
 	msg := q.buildMessage()
 	q.buildButtons()
 
-	_, err := q.Features.Users.getUserData(m.Sender)
+	_, err := q.Features.Users.getUserData(c.Sender())
 	if err != nil {
-		log.Println(err)
+		return fmt.Errorf("get user data: %w", err)
 	}
 
-	_, err = q.Bot.Send(m.Sender, msg, q.Menu, parseMode)
+	_, err = q.Bot.Send(c.Sender(), msg, q.Menu, parseMode)
 	if err != nil {
 		log.Println("failed to send query handler (from message) message: " + err.Error())
 	}
+	return nil
 }
 
-func (f *Funnel) handleAdminMessage(m *tb.Message) {
-	if !strings.HasPrefix(m.Text, adminPostToAllPrefix) {
-		f.bot.Send(m.Sender, "Не могу разобрать сообщение")
-		return
+func (f *Funnel) handleAdminMessage(c tb.Context) error {
+	if !strings.HasPrefix(c.Text(), adminPostToAllPrefix) {
+		if _, err := f.bot.Send(c.Sender(), "Не могу разобрать сообщение"); err != nil {
+			return fmt.Errorf("send message: %w", err)
+		}
+		return nil
 	}
 
-	adminPostText := strings.Replace(m.Text, adminPostToAllPrefix, "", 1)
+	adminPostText := strings.Replace(c.Text(), adminPostToAllPrefix, "", 1)
 	telegramUserIDs, err := f.features.Users.getUsersTelegramIDs()
 	if err != nil {
-		f.bot.Send(tb.ChatID(f.features.Users.AdminChatID), err.Error(), parseMode)
-		return
+		_, err := f.bot.Send(
+			tb.ChatID(f.features.Users.AdminChatID),
+			err.Error(),
+			parseMode,
+		)
+		return fmt.Errorf("send message: %w", err)
 	}
 
 	for _, telegramUserID := range telegramUserIDs {
-		f.bot.Send(tb.ChatID(telegramUserID), adminPostText, tb.ModeHTML)
+		_, err := f.bot.Send(tb.ChatID(telegramUserID), adminPostText, tb.ModeHTML)
+		if err != nil {
+			return fmt.Errorf("send message: %w", err)
+		}
 	}
+	return nil
 }
 
-func (q *queryHandler) handleButton(c *tb.Callback) {
+func (q *queryHandler) handleButton(c tb.Context) error {
 	msg := q.buildMessage()
 	q.buildButtons()
 
-	_, err := q.Bot.Send(c.Sender, msg, q.Menu, parseMode)
+	_, err := q.Bot.Send(c.Sender(), msg, q.Menu, parseMode)
 	if err != nil {
-		log.Println("failed to send query handler (from btn) message: " + err.Error())
+		return fmt.Errorf("failed to send query handler (from btn) message: %w", err)
 	}
+	return nil
 }
 
 func (q *queryHandler) buildButtons() {

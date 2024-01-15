@@ -6,7 +6,7 @@ import (
 	"log"
 	"strings"
 
-	tb "github.com/Sagleft/telegobot"
+	tb "gopkg.in/telebot.v3"
 )
 
 func isSQLErrNoRows(err error) bool {

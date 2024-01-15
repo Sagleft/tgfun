@@ -3,7 +3,7 @@ package tgfun
 import (
 	"database/sql"
 
-	tb "github.com/Sagleft/telegobot"
+	tb "gopkg.in/telebot.v3"
 )
 
 // Funnel - telegram bot funnel
