@@ -222,23 +222,25 @@ func (q *queryHandler) buildButtons() {
 	if q.EventData.Message.Buttons == nil {
 		return
 	}
+
 	if len(q.EventData.Message.Buttons) == 0 {
 		return
 	}
-	buttons := []tb.Btn{}
-	var btn tb.Btn
-	for _, btnData := range q.EventData.Message.Buttons {
-		if btnData.URL == "" {
-			btn = q.Menu.Data(btnData.Text, btnData.NextMessageID)
-		} else {
-			btn = q.Menu.URL(btnData.Text, btnData.URL)
+
+	if len(q.EventData.Message.Buttons) > 0 {
+		var rows []tb.Row
+
+		for _, btnData := range q.EventData.Message.Buttons {
+			var btn tb.Btn
+			if btnData.URL == "" {
+				btn = q.Menu.Data(btnData.Text, btnData.NextMessageID)
+			} else {
+				btn = q.Menu.URL(btnData.Text, btnData.URL)
+			}
+
+			rows = append(rows, q.Menu.Row(btn))
 		}
 
-		buttons = append(buttons, btn)
-	}
-	if len(buttons) > 0 {
-		q.Menu.Inline(
-			q.Menu.Row(buttons...),
-		)
+		q.Menu.Inline(rows...)
 	}
 }
