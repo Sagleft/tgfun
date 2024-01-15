@@ -143,13 +143,14 @@ func (q *queryHandler) handleMessage(c tb.Context) error {
 	msg := q.buildMessage()
 	q.buildButtons()
 
-	_, err := q.Features.Users.getUserData(c.Sender())
-	if err != nil {
-		return fmt.Errorf("get user data: %w", err)
+	if q.Features.Users != nil {
+		_, err := q.Features.Users.getUserData(c.Sender())
+		if err != nil {
+			return fmt.Errorf("get user data: %w", err)
+		}
 	}
 
-	_, err = q.Bot.Send(c.Sender(), msg, q.Menu, parseMode)
-	if err != nil {
+	if _, err := q.Bot.Send(c.Sender(), msg, q.Menu, parseMode); err != nil {
 		log.Println("failed to send query handler (from message) message: " + err.Error())
 	}
 	return nil
