@@ -228,6 +228,7 @@ func (q *queryHandler) buildButtons() {
 
 	if len(q.EventData.Message.Buttons) > 0 {
 		var rows []tb.Row
+		var btns []tb.Btn
 
 		for _, btnData := range q.EventData.Message.Buttons {
 			var btn tb.Btn
@@ -238,8 +239,13 @@ func (q *queryHandler) buildButtons() {
 			}
 
 			rows = append(rows, q.Menu.Row(btn))
+			btns = append(btns, btn)
 		}
 
-		q.Menu.Inline(rows...)
+		if q.EventData.Message.ButtonsIsColumns {
+			q.Menu.Inline(rows...)
+		} else {
+			q.Menu.Inline(q.Menu.Row(btns...))
+		}
 	}
 }

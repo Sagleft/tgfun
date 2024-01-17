@@ -52,9 +52,10 @@ type FunnelEvent struct {
 // EventMessage - funnel event message data
 type EventMessage struct {
 	//ID      string          `json:"id"`
-	Text    string          `json:"text"`
-	Image   string          `json:"image"`   // local filename or URL. optional
-	Buttons []MessageButton `json:"buttons"` // optional
+	Text             string          `json:"text"`
+	Image            string          `json:"image"`   // local filename or URL. optional
+	Buttons          []MessageButton `json:"buttons"` // optional
+	ButtonsIsColumns bool            `json:"buttonsIsColumns"`
 }
 
 // MessageButton - funnel event message button
