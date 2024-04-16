@@ -167,6 +167,12 @@ func (q *queryHandler) handleMessage(c tb.Context) error {
 	msg := q.buildMessage(c)
 	q.buildButtons()
 
+	if q.EventData.Message.OnEvent != nil {
+		if err := q.EventData.Message.OnEvent(c); err != nil {
+			return fmt.Errorf("handle event custom callback: %w", err)
+		}
+	}
+
 	if q.Features.Users != nil {
 		_, err := q.Features.Users.getUserData(c.Sender())
 		if err != nil {

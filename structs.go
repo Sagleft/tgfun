@@ -51,14 +51,22 @@ type FunnelEvent struct {
 
 // EventMessage - funnel event message data
 type EventMessage struct {
-	Text             string          `json:"text"`
-	Image            string          `json:"image"`   // local filename or URL. optional
+	// main data
+	Text  string `json:"text"`
+	Image string `json:"image"` // local filename or URL. optional
+
+	// instead of main data
+	Callback BuildMessageCallback `json:"-"` // use it to redefine message
+
+	// additional events
+	OnEvent OnEventCallback `json:"-"`
+
+	// optional
 	Buttons          []MessageButton `json:"buttons"` // optional
 	ButtonsIsColumns bool            `json:"buttonsIsColumns"`
-
-	// instead of other data
-	Callback BuildMessageCallback `json:"-"` // use it to redefine event
 }
+
+type OnEventCallback func(tb.Context) error
 
 type BuildMessageCallback func(tb.Context) interface{}
 
