@@ -134,7 +134,11 @@ func (f *Funnel) handleEvent(
 	return nil
 }
 
-func (q *queryHandler) buildMessage() interface{} {
+func (q *queryHandler) buildMessage(c tb.Context) interface{} {
+	if q.EventData.Message.Callback != nil {
+		return q.EventData.Message.Callback(c)
+	}
+
 	if q.EventData.Message.Image == "" {
 		if q.EventData.Message.Text == "" {
 			return "unknown message type"
@@ -160,7 +164,7 @@ func (q *queryHandler) buildMessage() interface{} {
 }
 
 func (q *queryHandler) handleMessage(c tb.Context) error {
-	msg := q.buildMessage()
+	msg := q.buildMessage(c)
 	q.buildButtons()
 
 	if q.Features.Users != nil {
@@ -207,7 +211,7 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 func (q *queryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
-	msg := q.buildMessage()
+	msg := q.buildMessage(c)
 	q.buildButtons()
 
 	_, err := q.Bot.Send(c.Sender(), msg, q.Menu, parseMode)
