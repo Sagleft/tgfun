@@ -145,6 +145,17 @@ func (q *queryHandler) buildMessage(c tb.Context) interface{} {
 		}
 		return q.EventData.Message.Text
 	}
+
+	if q.EventData.Message.IsCTA {
+		if q.EventData.Message.OnCTA != nil {
+			if err := q.EventData.Message.OnCTA(c); err != nil {
+				log.Printf("failed to call CTA callback: %s\n", err.Error())
+			}
+		} else {
+			log.Println("CTA callback is not set")
+		}
+	}
+
 	photo := &tb.Photo{}
 	if strings.Contains(q.EventData.Message.Image, "http") {
 		photo.File = tb.FromURL(q.EventData.Message.Image)
