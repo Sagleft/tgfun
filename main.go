@@ -1,12 +1,11 @@
 package tgfun
 
 // NewFunnel - funnel constructor
-func NewFunnel(data FunnelData, script FunnelScript) (*Funnel, error) {
-	f := &Funnel{
+func NewFunnel(data FunnelData, script FunnelScript) *Funnel {
+	return &Funnel{
 		Data:   data,
 		Script: script,
 	}
-	return f, f.Run()
 }
 
 // EnableUsersFeature !
