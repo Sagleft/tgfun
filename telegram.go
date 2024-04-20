@@ -134,9 +134,29 @@ func (f *Funnel) handleEvent(
 	return nil
 }
 
+func (q *queryHandler) handleCTA(c tb.Context) error {
+	if !q.EventData.Message.IsCTA {
+		return nil
+	}
+
+	if q.EventData.Message.OnCTA == nil {
+		log.Println("CTA callback is not set")
+		return nil
+	}
+
+	if err := q.EventData.Message.OnCTA(c); err != nil {
+		return fmt.Errorf("callback: %w", err)
+	}
+	return nil
+}
+
 func (q *queryHandler) buildMessage(c tb.Context) interface{} {
 	if q.EventData.Message.Callback != nil {
 		return q.EventData.Message.Callback(c)
+	}
+
+	if err := q.handleCTA(c); err != nil {
+		log.Printf("handle CTA: %s\n", err.Error())
 	}
 
 	if q.EventData.Message.Image == "" {
@@ -144,16 +164,6 @@ func (q *queryHandler) buildMessage(c tb.Context) interface{} {
 			return "unknown message type"
 		}
 		return q.EventData.Message.Text
-	}
-
-	if q.EventData.Message.IsCTA {
-		if q.EventData.Message.OnCTA != nil {
-			if err := q.EventData.Message.OnCTA(c); err != nil {
-				log.Printf("failed to call CTA callback: %s\n", err.Error())
-			}
-		} else {
-			log.Println("CTA callback is not set")
-		}
 	}
 
 	photo := &tb.Photo{}
