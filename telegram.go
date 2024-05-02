@@ -103,6 +103,26 @@ func (f *Funnel) handleTextMessage(c tb.Context) error {
 	return nil
 }
 
+func (f *Funnel) GetEventQueryHandler(
+	eventMessageID string,
+) (*QueryHandler, error) {
+	if _, isEventExists := f.Script[eventMessageID]; isEventExists {
+		return nil, fmt.Errorf("event %q not exists in funnel", eventMessageID)
+	}
+
+	menu := tb.ReplyMarkup{}
+
+	return &QueryHandler{
+		EventMessageID: eventMessageID,
+		EventData:      f.Script[eventMessageID],
+		Menu:           &menu,
+		ParseMode:      parseMode,
+		Bot:            f.bot,
+		ImageRoot:      f.Data.ImageRoot,
+		Features:       &f.features,
+	}, nil
+}
+
 func (f *Funnel) handleEvent(
 	eventMessageID string,
 	eventData FunnelEvent,
@@ -111,14 +131,9 @@ func (f *Funnel) handleEvent(
 	menu := tb.ReplyMarkup{}
 
 	// create message handler
-	q := queryHandler{
-		EventMessageID: eventMessageID,
-		EventData:      eventData,
-		Menu:           &menu,
-		ParseMode:      parseMode,
-		Bot:            f.bot,
-		ImageRoot:      f.Data.ImageRoot,
-		Features:       &f.features,
+	q, err := f.GetEventQueryHandler(eventMessageID)
+	if err != nil {
+		return fmt.Errorf("get query handler: %w", err)
 	}
 
 	// build message
@@ -134,7 +149,7 @@ func (f *Funnel) handleEvent(
 	return nil
 }
 
-func (q *queryHandler) handleCTA(c tb.Context) error {
+func (q *QueryHandler) handleCTA(c tb.Context) error {
 	if !q.EventData.Message.IsCTA {
 		return nil
 	}
@@ -150,13 +165,15 @@ func (q *queryHandler) handleCTA(c tb.Context) error {
 	return nil
 }
 
-func (q *queryHandler) buildMessage(c tb.Context) interface{} {
-	if q.EventData.Message.Callback != nil {
-		return q.EventData.Message.Callback(c)
+func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
+	if q.EventData.Message.Callback != nil && ctx != nil {
+		return q.EventData.Message.Callback(ctx)
 	}
 
-	if err := q.handleCTA(c); err != nil {
-		log.Printf("handle CTA: %s\n", err.Error())
+	if ctx != nil {
+		if err := q.handleCTA(ctx); err != nil {
+			log.Printf("handle CTA: %s\n", err.Error())
+		}
 	}
 
 	if q.EventData.Message.Image == "" {
@@ -184,7 +201,17 @@ func (q *queryHandler) buildMessage(c tb.Context) interface{} {
 	return photo
 }
 
-func (q *queryHandler) handleMessage(c tb.Context) error {
+func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
+	msg := q.buildMessage(nil)
+	q.buildButtons()
+
+	if _, err := q.Bot.Send(tb.ChatID(telegramUserID), msg, q.Menu, parseMode); err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+	return nil
+}
+
+func (q *QueryHandler) handleMessage(c tb.Context) error {
 	msg := q.buildMessage(c)
 	q.buildButtons()
 
@@ -221,13 +248,13 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 		_, err := f.bot.Send(
 			tb.ChatID(f.features.Users.AdminChatID),
 			err.Error(),
-			parseMode,
+			tb.ModeMarkdown,
 		)
 		return fmt.Errorf("send message: %w", err)
 	}
 
 	for _, telegramUserID := range telegramUserIDs {
-		_, err := f.bot.Send(tb.ChatID(telegramUserID), adminPostText, tb.ModeHTML)
+		_, err := f.bot.Send(tb.ChatID(telegramUserID), adminPostText, tb.ModeMarkdown)
 		if err != nil {
 			return fmt.Errorf("send message: %w", err)
 		}
@@ -235,7 +262,7 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 	return nil
 }
 
-func (q *queryHandler) handleButton(c tb.Context) error {
+func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
 	msg := q.buildMessage(c)
@@ -248,7 +275,7 @@ func (q *queryHandler) handleButton(c tb.Context) error {
 	return nil
 }
 
-func (q *queryHandler) buildButtons() {
+func (q *QueryHandler) buildButtons() {
 	if q.EventData.Message.Buttons == nil {
 		return
 	}

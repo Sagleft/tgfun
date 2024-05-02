@@ -83,7 +83,7 @@ type MessageButton struct {
 type FunnelScript map[string]FunnelEvent // message ID -> event
 
 // telegram user query handler
-type queryHandler struct {
+type QueryHandler struct {
 	EventMessageID string
 	EventData      FunnelEvent
 	Menu           *tb.ReplyMarkup
