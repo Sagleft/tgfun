@@ -62,11 +62,15 @@ type EventMessage struct {
 	OnEvent OnEventCallback `json:"-"`
 
 	// optional
-	Buttons          []MessageButton `json:"buttons"` // optional
-	ButtonsIsColumns bool            `json:"buttonsIsColumns"`
-	IsCTA            bool            `json:"isCTA"`
-	OnCTA            OnEventCallback `json:"-"`
+	Buttons          []MessageButton      `json:"buttons"` // optional
+	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
+	IsCTA            bool                 `json:"isCTA"`
+	OnCTA            OnEventCallback      `json:"-"`
+	Conversion       string               `json:"conversion"`
+	OnConversion     OnConversionCallback `json:"-"`
 }
+
+type OnConversionCallback func(ctx tb.Context, conversionTag string) error
 
 type OnEventCallback func(tb.Context) error
 

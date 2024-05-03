@@ -170,6 +170,17 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 		return q.EventData.Message.Callback(ctx)
 	}
 
+	if q.EventData.Message.OnConversion != nil && q.EventData.Message.Conversion != "" {
+		err := q.EventData.Message.OnConversion(ctx, q.EventData.Message.Conversion)
+		if err != nil {
+			log.Printf(
+				"handle conversion %q in tgfun: %s\n",
+				q.EventData.Message.Conversion,
+				err.Error(),
+			)
+		}
+	}
+
 	if ctx != nil {
 		if err := q.handleCTA(ctx); err != nil {
 			log.Printf("handle CTA: %s\n", err.Error())
