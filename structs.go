@@ -64,8 +64,6 @@ type EventMessage struct {
 	// optional
 	Buttons          []MessageButton      `json:"buttons"` // optional
 	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
-	IsCTA            bool                 `json:"isCTA"`
-	OnCTA            OnEventCallback      `json:"-"`
 	Conversion       string               `json:"conversion"`
 	OnConversion     OnConversionCallback `json:"-"`
 }

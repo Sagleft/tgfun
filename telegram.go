@@ -149,22 +149,6 @@ func (f *Funnel) handleEvent(
 	return nil
 }
 
-func (q *QueryHandler) handleCTA(c tb.Context) error {
-	if !q.EventData.Message.IsCTA {
-		return nil
-	}
-
-	if q.EventData.Message.OnCTA == nil {
-		log.Println("CTA callback is not set")
-		return nil
-	}
-
-	if err := q.EventData.Message.OnCTA(c); err != nil {
-		return fmt.Errorf("callback: %w", err)
-	}
-	return nil
-}
-
 func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 	if q.EventData.Message.Callback != nil && ctx != nil {
 		return q.EventData.Message.Callback(ctx)
@@ -178,12 +162,6 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 				q.EventData.Message.Conversion,
 				err.Error(),
 			)
-		}
-	}
-
-	if ctx != nil {
-		if err := q.handleCTA(ctx); err != nil {
-			log.Printf("handle CTA: %s\n", err.Error())
 		}
 	}
 
