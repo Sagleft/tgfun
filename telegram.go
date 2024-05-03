@@ -106,7 +106,7 @@ func (f *Funnel) handleTextMessage(c tb.Context) error {
 func (f *Funnel) GetEventQueryHandler(
 	eventMessageID string,
 ) (*QueryHandler, error) {
-	if _, isEventExists := f.Script[eventMessageID]; isEventExists {
+	if _, isEventExists := f.Script[eventMessageID]; !isEventExists {
 		return nil, fmt.Errorf("event %q not exists in funnel", eventMessageID)
 	}
 
