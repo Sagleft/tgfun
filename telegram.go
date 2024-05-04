@@ -194,7 +194,12 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 	msg := q.buildMessage(nil)
 	q.buildButtons()
 
-	if _, err := q.Bot.Send(tb.ChatID(telegramUserID), msg, q.Menu, parseMode); err != nil {
+	var format = parseMode
+	if q.EventData.Message.Format != "" {
+		format = string(q.EventData.Message.Format)
+	}
+
+	if _, err := q.Bot.Send(tb.ChatID(telegramUserID), msg, q.Menu, format); err != nil {
 		return fmt.Errorf("send: %w", err)
 	}
 	return nil
@@ -217,7 +222,12 @@ func (q *QueryHandler) handleMessage(c tb.Context) error {
 		}
 	}
 
-	if _, err := q.Bot.Send(c.Sender(), msg, q.Menu, parseMode); err != nil {
+	var format = parseMode
+	if q.EventData.Message.Format != "" {
+		format = string(q.EventData.Message.Format)
+	}
+
+	if _, err := q.Bot.Send(c.Sender(), msg, q.Menu, format); err != nil {
 		log.Println("failed to send query handler (from message) message: " + err.Error())
 	}
 	return nil
@@ -257,7 +267,12 @@ func (q *QueryHandler) handleButton(c tb.Context) error {
 	msg := q.buildMessage(c)
 	q.buildButtons()
 
-	_, err := q.Bot.Send(c.Sender(), msg, q.Menu, parseMode)
+	var format = parseMode
+	if q.EventData.Message.Format != "" {
+		format = string(q.EventData.Message.Format)
+	}
+
+	_, err := q.Bot.Send(c.Sender(), msg, q.Menu, format)
 	if err != nil {
 		return fmt.Errorf("failed to send query handler (from btn) message: %w", err)
 	}
