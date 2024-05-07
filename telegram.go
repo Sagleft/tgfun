@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	swissknife "github.com/Sagleft/swiss-knife"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -170,22 +171,42 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 
 	if q.EventData.Message.Image == "" {
 		if q.EventData.Message.Text == "" {
-			return "unknown message type"
+			return "Failed to build message: unknown message type. Try again later, sorry"
 		}
 
 		if q.EventData.Message.File.Name != "" {
 			// file message
-			path := q.FilesRoot
-			if !strings.HasSuffix(path, "/") {
-				path += "/"
+			docPath := getFilePath(
+				q.EventData.Message.File.Path,
+				q.FilesRoot,
+			)
+			if !swissknife.IsFileExists(docPath) {
+				// when file not found
+				return "Failed to upload file for delivery. Try again later, sorry"
 			}
-			path += q.EventData.Message.File.Path
 
-			return &tb.Document{
-				File:     tb.FromDisk(path),
+			doc := &tb.Document{
+				File:     tb.FromDisk(docPath),
 				Caption:  q.EventData.Message.Text,
 				FileName: q.EventData.Message.File.Name,
 			}
+
+			// add preview when available
+			if q.EventData.Message.File.PreviewImagePath != "" {
+				previewPath := getFilePath(
+					q.EventData.Message.File.PreviewImagePath,
+					q.FilesRoot,
+				)
+				if !swissknife.IsFileExists(previewPath) {
+					log.Printf("file preview %q not exists, skip\n", previewPath)
+				} else {
+					doc.Thumbnail = &tb.Photo{
+						File: tb.FromDisk(previewPath),
+					}
+				}
+			}
+
+			return doc
 		}
 
 		// text message
@@ -197,18 +218,24 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 	if strings.Contains(q.EventData.Message.Image, "http") {
 		photo.File = tb.FromURL(q.EventData.Message.Image)
 	} else {
-
-		imgPath := q.FilesRoot
-		if !strings.HasSuffix(imgPath, "/") {
-			imgPath += "/"
-		}
-		imgPath += q.EventData.Message.Image
-		photo.File = tb.FromDisk(imgPath)
+		photo.File = tb.FromDisk(
+			getFilePath(q.EventData.Message.Image, q.FilesRoot),
+		)
 	}
 	if q.EventData.Message.Text != "" {
 		photo.Caption = q.EventData.Message.Text
 	}
 	return photo
+}
+
+func getFilePath(localPath, pathRoot string) string {
+	filePath := pathRoot
+	if !strings.HasSuffix(filePath, "/") {
+		filePath += "/"
+	}
+
+	filePath += localPath
+	return filePath
 }
 
 func (q *QueryHandler) CustomHandle(telegramUserID int64) error {

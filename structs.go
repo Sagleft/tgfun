@@ -72,8 +72,9 @@ type EventMessage struct {
 }
 
 type FileData struct {
-	Path string `json:"path"`
-	Name string `json:"name"`
+	Path             string `json:"path"`
+	Name             string `json:"name"`
+	PreviewImagePath string `json:"preview"`
 }
 
 type OnConversionCallback func(ctx tb.Context, conversionTag string) error
