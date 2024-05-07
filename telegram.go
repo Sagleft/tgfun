@@ -148,7 +148,7 @@ func (f *Funnel) handleEvent(
 	f.bot.Handle(&btnListener, q.handleButton)
 
 	// text query
-	f.bot.Handle(tb.OnText, q.handleTextOrButton)
+	f.bot.Handle(tb.OnText, q.handleMessage)
 	return nil
 }
 
@@ -266,10 +266,7 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 
 func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
-	return q.handleTextOrButton(c)
-}
 
-func (q *QueryHandler) handleTextOrButton(c tb.Context) error {
 	msg := q.buildMessage(c)
 	q.buildButtons()
 
