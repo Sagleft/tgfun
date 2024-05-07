@@ -63,7 +63,7 @@ type EventMessage struct {
 	// optional
 	Image            string               `json:"image"` // local filename or URL
 	File             FileData             `json:"file"`
-	Video            VideoData            `json:"file"`
+	Video            VideoData            `json:"video"`
 	Buttons          []MessageButton      `json:"buttons"`
 	Format           ParseFormat          `json:"format"`
 	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
