@@ -14,3 +14,12 @@ const (
 	ParseFormatMarkdown ParseFormat = ParseFormat(tb.ModeMarkdown)
 	ParseFormatHTML     ParseFormat = ParseFormat(tb.ModeHTML)
 )
+
+type MessageType string
+
+const (
+	MessageTypeText     MessageType = "text"
+	MessageTypePhoto    MessageType = "photo"
+	MessageTypeDocument MessageType = "document"
+	MessageTypeVideo    MessageType = "video"
+)

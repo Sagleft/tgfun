@@ -63,12 +63,17 @@ type EventMessage struct {
 	// optional
 	Image            string               `json:"image"` // local filename or URL
 	File             FileData             `json:"file"`
+	Video            VideoData            `json:"file"`
 	Buttons          []MessageButton      `json:"buttons"`
 	Format           ParseFormat          `json:"format"`
 	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
 	Conversion       string               `json:"conversion"`
 	OnConversion     OnConversionCallback `json:"-"`
 	PinThisMessage   bool                 `json:"pin"`
+}
+
+type VideoData struct {
+	Path string `json:"path"`
 }
 
 type FileData struct {
