@@ -220,10 +220,7 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 		format = string(q.EventData.Message.Format)
 	}
 
-	if _, err := q.Bot.Send(tb.ChatID(telegramUserID), msg, q.Menu, format); err != nil {
-		return fmt.Errorf("send: %w", err)
-	}
-	return nil
+	return q.send(telegramUserID, msg, format)
 }
 
 func (q *QueryHandler) handleMessage(c tb.Context) error {
@@ -248,10 +245,7 @@ func (q *QueryHandler) handleMessage(c tb.Context) error {
 		format = string(q.EventData.Message.Format)
 	}
 
-	if _, err := q.Bot.Send(c.Sender(), msg, q.Menu, format); err != nil {
-		log.Println("failed to send query handler (from message) message: " + err.Error())
-	}
-	return nil
+	return q.send(c.Sender().ID, msg, format)
 }
 
 func (f *Funnel) handleAdminMessage(c tb.Context) error {
@@ -293,9 +287,23 @@ func (q *QueryHandler) handleButton(c tb.Context) error {
 		format = string(q.EventData.Message.Format)
 	}
 
-	_, err := q.Bot.Send(c.Sender(), msg, q.Menu, format)
+	return q.send(c.Sender().ID, msg, format)
+}
+
+func (q *QueryHandler) send(
+	chatID int64,
+	message interface{},
+	format string,
+) error {
+	messageResponse, err := q.Bot.Send(tb.ChatID(chatID), message, q.Menu, format)
 	if err != nil {
-		return fmt.Errorf("failed to send query handler (from btn) message: %w", err)
+		return fmt.Errorf("send message: %w", err)
+	}
+
+	if q.EventData.Message.PinThisMessage {
+		if err := q.Bot.Pin(messageResponse); err != nil {
+			log.Printf("pin message: %s\n", err.Error())
+		}
 	}
 	return nil
 }

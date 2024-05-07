@@ -68,6 +68,7 @@ type EventMessage struct {
 	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
 	Conversion       string               `json:"conversion"`
 	OnConversion     OnConversionCallback `json:"-"`
+	PinThisMessage   bool                 `json:"pin"`
 }
 
 type FileData struct {
