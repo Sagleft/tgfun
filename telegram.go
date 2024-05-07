@@ -118,7 +118,7 @@ func (f *Funnel) GetEventQueryHandler(
 		Menu:           &menu,
 		ParseMode:      parseMode,
 		Bot:            f.bot,
-		ImageRoot:      f.Data.ImageRoot,
+		FilesRoot:      f.Data.ImageRoot,
 		Features:       &f.features,
 	}, nil
 }
@@ -172,15 +172,33 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 		if q.EventData.Message.Text == "" {
 			return "unknown message type"
 		}
+
+		if q.EventData.Message.File.Name != "" {
+			// file message
+			path := q.FilesRoot
+			if !strings.HasSuffix(path, "/") {
+				path += "/"
+			}
+			path += q.EventData.Message.File.Path
+
+			return &tb.Document{
+				File:     tb.FromDisk(path),
+				Caption:  q.EventData.Message.Text,
+				FileName: q.EventData.Message.File.Name,
+			}
+		}
+
+		// text message
 		return q.EventData.Message.Text
 	}
 
+	// photo message
 	photo := &tb.Photo{}
 	if strings.Contains(q.EventData.Message.Image, "http") {
 		photo.File = tb.FromURL(q.EventData.Message.Image)
 	} else {
 
-		imgPath := q.ImageRoot
+		imgPath := q.FilesRoot
 		if !strings.HasSuffix(imgPath, "/") {
 			imgPath += "/"
 		}

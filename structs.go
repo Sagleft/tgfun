@@ -52,8 +52,7 @@ type FunnelEvent struct {
 // EventMessage - funnel event message data
 type EventMessage struct {
 	// main data
-	Text  string `json:"text"`
-	Image string `json:"image"` // local filename or URL. optional
+	Text string `json:"text"`
 
 	// instead of main data
 	Callback BuildMessageCallback `json:"-"` // use it to redefine message
@@ -62,11 +61,18 @@ type EventMessage struct {
 	OnEvent OnEventCallback `json:"-"`
 
 	// optional
+	Image            string               `json:"image"` // local filename or URL
+	File             FileData             `json:"file"`
 	Buttons          []MessageButton      `json:"buttons"`
 	Format           ParseFormat          `json:"format"`
 	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
 	Conversion       string               `json:"conversion"`
 	OnConversion     OnConversionCallback `json:"-"`
+}
+
+type FileData struct {
+	Path string `json:"path"`
+	Name string `json:"name"`
 }
 
 type OnConversionCallback func(ctx tb.Context, conversionTag string) error
@@ -92,6 +98,6 @@ type QueryHandler struct {
 	Menu           *tb.ReplyMarkup
 	ParseMode      tb.ParseMode
 	Bot            *tb.Bot
-	ImageRoot      string // inherit from Funnel
+	FilesRoot      string // inherit from Funnel
 	Features       *funnelFeatures
 }
