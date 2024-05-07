@@ -148,7 +148,7 @@ func (f *Funnel) handleEvent(
 	f.bot.Handle(&btnListener, q.handleButton)
 
 	// text query
-	f.bot.Handle(tb.OnText, q.handleMessage)
+	f.bot.Handle(eventMessageID, q.handleMessage)
 	return nil
 }
 
