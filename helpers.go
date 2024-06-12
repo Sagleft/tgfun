@@ -100,6 +100,8 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 
 	video := &tb.Video{
 		File:     tb.FromDisk(videoPath),
+		Width:    message.Video.Width,
+		Height:   message.Video.Height,
 		FileName: "video.mp4",
 	}
 	if message.Text != "" {
