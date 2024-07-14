@@ -54,10 +54,18 @@ func (f *Funnel) Run() error {
 		return fmt.Errorf("handle script events: %w", err)
 	}
 
+	if f.OnWebAppCallback != nil {
+		f.bot.Handle(tb.OnWebApp, f.OnWebAppCallback)
+	}
+
 	f.handleTextEvents()
 
 	go f.bot.Start()
 	return nil
+}
+
+func (f *Funnel) SetupOnWebAppLaunchCallback(cb func(ctx tb.Context) error) {
+	f.OnWebAppCallback = cb
 }
 
 func (f *Funnel) handleStartMessage() error {

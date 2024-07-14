@@ -12,6 +12,8 @@ type Funnel struct {
 	Data   FunnelData
 	Script FunnelScript
 
+	OnWebAppCallback func(ctx tb.Context) error
+
 	// protected
 	bot      *tb.Bot
 	features funnelFeatures
