@@ -75,9 +75,10 @@ type EventMessage struct {
 }
 
 type VideoData struct {
-	Path   string `json:"path"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
+	Path             string `json:"path"`
+	PreviewImagePath string `json:"preview"`
+	Width            int    `json:"width"`
+	Height           int    `json:"height"`
 }
 
 type FileData struct {

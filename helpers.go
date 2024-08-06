@@ -107,5 +107,20 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 	if message.Text != "" {
 		video.Caption = message.Text
 	}
+
+	if message.Video.PreviewImagePath != "" {
+		previewPath := getFilePath(
+			message.Video.PreviewImagePath,
+			filesRoot,
+		)
+		if !swissknife.IsFileExists(previewPath) {
+			log.Printf("file preview %q not exists, skip\n", previewPath)
+		} else {
+			video.Thumbnail = &tb.Photo{
+				File: tb.FromDisk(previewPath),
+			}
+		}
+	}
+
 	return video
 }
