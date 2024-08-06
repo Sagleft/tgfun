@@ -161,7 +161,7 @@ func (f *Funnel) handleEvent(
 }
 
 func (q *QueryHandler) actionNotify(to tb.Recipient, action tb.ChatAction) {
-	if err := q.Bot.Notify(to, tb.UploadingPhoto); err != nil {
+	if err := q.Bot.Notify(to, action); err != nil {
 		log.Println("notify:", err)
 	}
 }
