@@ -117,7 +117,9 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 			log.Printf("file preview %q not exists, skip\n", previewPath)
 		} else {
 			video.Thumbnail = &tb.Photo{
-				File: tb.FromDisk(previewPath),
+				File:   tb.FromDisk(previewPath),
+				Width:  message.Video.Width,
+				Height: message.Video.Height,
 			}
 		}
 	}
