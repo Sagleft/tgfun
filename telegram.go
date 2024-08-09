@@ -121,6 +121,7 @@ func (f *Funnel) GetEventQueryHandler(
 	menu := tb.ReplyMarkup{}
 
 	return &QueryHandler{
+		Script:         f.Script,
 		EventMessageID: eventMessageID,
 		EventData:      f.Script[eventMessageID],
 		Menu:           &menu,
@@ -128,6 +129,23 @@ func (f *Funnel) GetEventQueryHandler(
 		Bot:            f.bot,
 		FilesRoot:      f.Data.ImageRoot,
 		Features:       &f.features,
+	}, nil
+}
+
+func (q *QueryHandler) createChildHandler(messageID string) (*QueryHandler, error) {
+	if _, isEventExists := q.Script[messageID]; !isEventExists {
+		return nil, fmt.Errorf("event %q not exists in funnel", messageID)
+	}
+
+	return &QueryHandler{
+		Script:         q.Script,
+		EventMessageID: messageID,
+		EventData:      q.Script[messageID],
+		Menu:           q.Menu,
+		ParseMode:      q.ParseMode,
+		Bot:            q.Bot,
+		FilesRoot:      q.FilesRoot,
+		Features:       q.Features,
 	}, nil
 }
 
@@ -227,12 +245,7 @@ func (q *QueryHandler) handleMessage(c tb.Context) error {
 		}
 	}
 
-	var format = parseMode
-	if q.EventData.Message.Format != "" {
-		format = string(q.EventData.Message.Format)
-	}
-
-	return q.send(c.Sender().ID, msg, format)
+	return q.sendWithCheck(c, msg)
 }
 
 func (f *Funnel) handleAdminMessage(c tb.Context) error {
@@ -269,12 +282,68 @@ func (q *QueryHandler) handleButton(c tb.Context) error {
 	msg := q.buildMessage(c)
 	q.buildButtons()
 
+	return q.sendWithCheck(c, msg)
+}
+
+func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 	var format = parseMode
 	if q.EventData.Message.Format != "" {
 		format = string(q.EventData.Message.Format)
 	}
 
+	lockerPassed, err := q.checkLocker(c)
+	if err != nil {
+		log.Println(err)
+	}
+	if !lockerPassed {
+		lockerMessageHandler, err := q.createChildHandler(q.EventData.SubscriptionLocker.
+			LockerMessageID)
+		if err != nil {
+			log.Println(err)
+		} else {
+			msg := lockerMessageHandler.buildMessage(c)
+			lockerMessageHandler.buildButtons()
+			lockerMessageHandler.send(c.Sender().ID, msg, format)
+		}
+	}
+
 	return q.send(c.Sender().ID, msg, format)
+}
+
+// проверим, можем ли отправить сообщение или есть какие-то блокирующие штуки
+// провде необходимости подписки на канал.
+// возвращает true, если можно отправлять сообщение.
+func (q *QueryHandler) checkLocker(c tb.Context) (bool, error) {
+	if !q.EventData.SubscriptionLocker.Enabled {
+		return true, nil
+	}
+
+	isJoined, err := q.isUserJoined(q.EventData.SubscriptionLocker.ChatID, c.Sender())
+	if err != nil {
+		return false, fmt.Errorf(
+			"check user joined %v: %w",
+			q.EventData.SubscriptionLocker.ChatID, err,
+		)
+	}
+	return isJoined, nil
+}
+
+func (q *QueryHandler) isUserJoined(chatID int64, user tb.Recipient) (bool, error) {
+	member, err := q.Bot.ChatMemberOf(tb.ChatID(chatID), user)
+	if err != nil {
+		return false, fmt.Errorf("check subscription: %w", err)
+	}
+
+	switch member.Role {
+	default:
+		return false, fmt.Errorf("unknown member role: %q", member.Role)
+	case tb.Creator, tb.Member, tb.Administrator:
+		return true, nil
+	case tb.Restricted, tb.Kicked:
+		return false, fmt.Errorf("sorry, you were banned")
+	case tb.Left:
+		return false, nil
+	}
 }
 
 func (q *QueryHandler) send(

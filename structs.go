@@ -48,7 +48,14 @@ type FunnelData struct {
 
 // FunnelEvent - user interaction event
 type FunnelEvent struct {
-	Message EventMessage `json:"message"`
+	Message            EventMessage `json:"message"`
+	SubscriptionLocker EventLocker  `json:"locker"`
+}
+
+type EventLocker struct {
+	Enabled         bool   `json:"enabled"`
+	ChatID          int64  `json:"chatID"`
+	LockerMessageID string `json:"lockerMessageID"`
 }
 
 // EventMessage - funnel event message data
@@ -105,6 +112,8 @@ type FunnelScript map[string]FunnelEvent // message ID -> event
 
 // telegram user query handler
 type QueryHandler struct {
+	Script FunnelScript
+
 	EventMessageID string
 	EventData      FunnelEvent
 	Menu           *tb.ReplyMarkup
