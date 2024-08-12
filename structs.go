@@ -79,6 +79,7 @@ type EventMessage struct {
 	Conversion       string               `json:"conversion"`
 	OnConversion     OnConversionCallback `json:"-"`
 	PinThisMessage   bool                 `json:"pin"`
+	DisablePreview   bool                 `json:"disablePreview"`
 }
 
 type VideoData struct {

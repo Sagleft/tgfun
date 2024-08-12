@@ -39,9 +39,12 @@ func getPhotoMessage(message EventMessage, filesRoot string) interface{} {
 	if strings.Contains(message.Image, "http") {
 		photo.File = tb.FromURL(message.Image)
 	} else {
-		photo.File = tb.FromDisk(
-			getFilePath(message.Image, filesRoot),
-		)
+		filePath := getFilePath(message.Image, filesRoot)
+		if !swissknife.IsFileExists(filePath) {
+			return message.Text // use plain text, when file not exists
+		}
+
+		photo.File = tb.FromDisk(filePath)
 	}
 	if message.Text != "" {
 		photo.Caption = message.Text
