@@ -151,8 +151,8 @@ func (q *QueryHandler) createChildHandler(messageID string) (*QueryHandler, erro
 
 func (f *Funnel) handleEvent(
 	eventMessageID string,
-	eventData FunnelEvent,
-	parseMode tb.ParseMode,
+	_ FunnelEvent,
+	_ tb.ParseMode,
 ) error {
 	menu := tb.ReplyMarkup{}
 
@@ -218,7 +218,7 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 
 func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 	msg := q.buildMessage(nil)
-	q.buildButtons()
+	q.buildButtons(telegramUserID)
 
 	var format = parseMode
 	if q.EventData.Message.Format != "" {
@@ -230,7 +230,7 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 
 func (q *QueryHandler) handleMessage(c tb.Context) error {
 	msg := q.buildMessage(c)
-	q.buildButtons()
+	q.buildButtons(c.Sender().ID)
 
 	if q.EventData.Message.OnEvent != nil {
 		if err := q.EventData.Message.OnEvent(c); err != nil {
@@ -280,7 +280,7 @@ func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
 	msg := q.buildMessage(c)
-	q.buildButtons()
+	q.buildButtons(c.Sender().ID)
 
 	return q.sendWithCheck(c, msg)
 }
@@ -302,7 +302,7 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 			log.Println(err)
 		} else {
 			msg := lockerMessageHandler.buildMessage(c)
-			lockerMessageHandler.buildButtons()
+			lockerMessageHandler.buildButtons(c.Sender().ID)
 			return lockerMessageHandler.send(c.Sender().ID, msg, format)
 		}
 	}
@@ -364,7 +364,7 @@ func (q *QueryHandler) send(
 	return nil
 }
 
-func (q *QueryHandler) buildButtons() {
+func (q *QueryHandler) buildButtons(telegramUserID int64) {
 	if q.EventData.Message.Buttons == nil {
 		return
 	}
@@ -380,15 +380,29 @@ func (q *QueryHandler) buildButtons() {
 		for _, btnData := range q.EventData.Message.Buttons {
 			var btn tb.Btn
 			if btnData.URL == "" {
+				// next event button
 				btn = q.Menu.Data(btnData.Text, btnData.NextMessageID)
 			} else {
-				btn = q.Menu.URL(btnData.Text, btnData.URL)
+				// URL button
+				btnURL := btnData.URL
+				if q.Features.IsUTMTagsFeatureActive() && btnData.UseUTMTags {
+					utmTags := q.Features.UTM.GetUserUTMTags(telegramUserID)
+					newURL, err := addUtmTags(btnURL, utmTags.Source, utmTags.Campaign)
+					if err != nil {
+						log.Println("failed to add utm tags to url:", err)
+					}
+
+					btnURL = newURL
+				}
+
+				btn = q.Menu.URL(btnData.Text, btnURL)
 			}
 
 			rows = append(rows, q.Menu.Row(btn))
 			btns = append(btns, btn)
 		}
 
+		// handle layout style
 		if q.EventData.Message.ButtonsIsColumns {
 			q.Menu.Inline(rows...)
 		} else {

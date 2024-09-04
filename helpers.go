@@ -1,7 +1,9 @@
 package tgfun
 
 import (
+	"fmt"
 	"log"
+	"net/url"
 	"strings"
 
 	swissknife "github.com/Sagleft/swiss-knife"
@@ -128,4 +130,18 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 	}
 
 	return video
+}
+
+func addUtmTags(baseURL, utmSource, utmCampaign string) (string, error) {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return "", fmt.Errorf("parse URL: %w", err)
+	}
+
+	q := u.Query()
+	q.Set("utm_source", utmSource)
+	q.Set("utm_campaign", utmCampaign)
+	u.RawQuery = q.Encode()
+
+	return u.String(), nil
 }

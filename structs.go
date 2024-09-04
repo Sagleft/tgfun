@@ -21,6 +21,7 @@ type Funnel struct {
 
 type funnelFeatures struct {
 	Users *UsersFeature
+	UTM   *UTMTagsFeature
 }
 
 // UsersFeature - feature to enable users db
@@ -104,8 +105,9 @@ type BuildMessageCallback func(tb.Context) interface{}
 // MessageButton - funnel event message button
 type MessageButton struct {
 	Text          string `json:"text"`
-	NextMessageID string `json:"nextID"` // optional for URL-buttons
-	URL           string `json:"url"`    // optional. only for URL-buttons
+	NextMessageID string `json:"nextID"`     // optional for URL-buttons
+	URL           string `json:"url"`        // optional. only for URL-buttons
+	UseUTMTags    bool   `json:"useUtmTags"` // optional
 }
 
 // FunnelScript - funnel scenario
