@@ -320,7 +320,11 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 		} else {
 			msg := lockerMessageHandler.buildMessage(c)
 			lockerMessageHandler.buildButtons(c.Sender().ID)
-			return lockerMessageHandler.send(c.Sender().ID, msg, format)
+			return lockerMessageHandler.send(
+				c.Sender().ID,
+				msg,
+				string(lockerMessageHandler.EventData.Message.Format),
+			)
 		}
 	}
 
