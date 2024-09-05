@@ -184,20 +184,37 @@ func (q *QueryHandler) actionNotify(to tb.Recipient, action tb.ChatAction) {
 	}
 }
 
+func (q *QueryHandler) makeConversion(ctx tb.Context, conversion string) {
+	err := q.EventData.Message.OnConversion(ctx, conversion)
+	if err != nil {
+		log.Printf(
+			"handle conversion %q in tgfun: %s\n",
+			conversion,
+			err.Error(),
+		)
+	}
+}
+
+func (q *QueryHandler) handleConversions(ctx tb.Context) {
+	if q.EventData.Message.Conversion != "" {
+		q.makeConversion(ctx, q.EventData.Message.Conversion)
+		return
+	}
+
+	if len(q.EventData.Message.Conversions) > 0 {
+		for _, conversion := range q.EventData.Message.Conversions {
+			q.makeConversion(ctx, conversion)
+		}
+	}
+}
+
 func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 	if q.EventData.Message.Callback != nil && ctx != nil {
 		return q.EventData.Message.Callback(ctx)
 	}
 
-	if q.EventData.Message.OnConversion != nil && q.EventData.Message.Conversion != "" {
-		err := q.EventData.Message.OnConversion(ctx, q.EventData.Message.Conversion)
-		if err != nil {
-			log.Printf(
-				"handle conversion %q in tgfun: %s\n",
-				q.EventData.Message.Conversion,
-				err.Error(),
-			)
-		}
+	if q.EventData.Message.OnConversion != nil {
+		q.handleConversions(ctx)
 	}
 
 	// get message by type
