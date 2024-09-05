@@ -178,8 +178,12 @@ func (f *Funnel) handleEvent(
 	return nil
 }
 
-func (q *QueryHandler) actionNotify(to tb.Recipient, action tb.ChatAction) {
-	if err := q.Bot.Notify(to, action); err != nil {
+func (q *QueryHandler) actionNotify(ctx tb.Context, action tb.ChatAction) {
+	if ctx == nil {
+		return
+	}
+
+	if err := q.Bot.Notify(ctx.Sender(), action); err != nil {
 		log.Println("notify:", err)
 	}
 }
@@ -222,13 +226,13 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 	default:
 		return getTextMessage(q.EventData.Message)
 	case MessageTypePhoto:
-		q.actionNotify(ctx.Sender(), tb.UploadingPhoto)
+		q.actionNotify(ctx, tb.UploadingPhoto)
 		return getPhotoMessage(q.EventData.Message, q.FilesRoot)
 	case MessageTypeDocument:
-		q.actionNotify(ctx.Sender(), tb.UploadingDocument)
+		q.actionNotify(ctx, tb.UploadingDocument)
 		return getDocumentMessage(q.EventData.Message, q.FilesRoot)
 	case MessageTypeVideo:
-		q.actionNotify(ctx.Sender(), tb.UploadingVideo)
+		q.actionNotify(ctx, tb.UploadingVideo)
 		return getVideoMessage(q.EventData.Message, q.FilesRoot)
 	}
 }
