@@ -202,6 +202,7 @@ func (q *QueryHandler) handleConversions(ctx tb.Context) {
 	}
 
 	if len(q.EventData.Message.Conversions) > 0 {
+		log.Println("handle user conversions:", q.EventData.Message.Conversions)
 		for _, conversion := range q.EventData.Message.Conversions {
 			q.makeConversion(ctx, conversion)
 		}
