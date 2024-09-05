@@ -132,15 +132,18 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 	return video
 }
 
-func addUtmTags(baseURL, utmSource, utmCampaign string) (string, error) {
+func addUtmTags(baseURL string, tags UTMTags) (string, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", fmt.Errorf("parse URL: %w", err)
 	}
 
 	q := u.Query()
-	q.Set("utm_source", utmSource)
-	q.Set("utm_campaign", utmCampaign)
+	q.Set("utm_source", tags.Source)
+	q.Set("utm_campaign", tags.Campaign)
+	if tags.Content != "" {
+		q.Set("utm_content", tags.Content)
+	}
 	u.RawQuery = q.Encode()
 
 	return u.String(), nil

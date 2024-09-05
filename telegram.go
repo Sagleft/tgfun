@@ -412,7 +412,7 @@ func (q *QueryHandler) buildButtons(telegramUserID int64) {
 				btnURL := btnData.URL
 				if q.Features.IsUTMTagsFeatureActive() && btnData.UseUTMTags {
 					utmTags := q.Features.UTM.GetUserUTMTags(telegramUserID)
-					newURL, err := addUtmTags(btnURL, utmTags.Source, utmTags.Campaign)
+					newURL, err := addUtmTags(btnURL, utmTags)
 					if err != nil {
 						log.Println("failed to add utm tags to url:", err)
 					}

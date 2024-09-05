@@ -16,6 +16,7 @@ func (f *Funnel) EnableUsersFeature(feature UsersFeature) {
 type UTMTags struct {
 	Source   string `json:"source"`
 	Campaign string `json:"campaign"`
+	Content  string `json:"content"`
 }
 
 type UTMTagsFeature struct {
