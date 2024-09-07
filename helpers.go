@@ -133,6 +133,10 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 }
 
 func addUtmTags(baseURL string, tags UTMTags) (string, error) {
+	if tags.Campaign == "" || tags.Source == "" {
+		return baseURL, nil
+	}
+
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return "", fmt.Errorf("parse URL: %w", err)
