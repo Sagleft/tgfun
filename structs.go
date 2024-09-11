@@ -97,7 +97,11 @@ type FileData struct {
 	PreviewImagePath string `json:"preview"`
 }
 
-type OnConversionCallback func(telegramUserID int64, conversionTag string) error
+type OnConversionCallback func(
+	telegramUserID int64,
+	conversionTag string,
+	payload string,
+) error
 
 type OnEventCallback func(tb.Context) error
 

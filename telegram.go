@@ -184,8 +184,12 @@ func (q *QueryHandler) actionNotify(telegramUserID int64, action tb.ChatAction) 
 	}
 }
 
-func (q *QueryHandler) makeConversion(telegramUserID int64, conversion string) {
-	err := q.EventData.Message.OnConversion(telegramUserID, conversion)
+func (q *QueryHandler) makeConversion(
+	telegramUserID int64,
+	conversion string,
+	payload string,
+) {
+	err := q.EventData.Message.OnConversion(telegramUserID, conversion, payload)
 	if err != nil {
 		log.Printf(
 			"handle conversion %q in tgfun: %s\n",
@@ -195,26 +199,37 @@ func (q *QueryHandler) makeConversion(telegramUserID int64, conversion string) {
 	}
 }
 
-func (q *QueryHandler) handleConversions(telegramUserID int64) {
+func (q *QueryHandler) handleConversions(telegramUserID int64, payload string) {
 	if q.EventData.Message.Conversion != "" {
-		q.makeConversion(telegramUserID, q.EventData.Message.Conversion)
+		q.makeConversion(
+			telegramUserID,
+			q.EventData.Message.Conversion,
+			payload,
+		)
 		return
 	}
 
 	if len(q.EventData.Message.Conversions) > 0 {
 		for _, conversion := range q.EventData.Message.Conversions {
-			q.makeConversion(telegramUserID, conversion)
+			q.makeConversion(
+				telegramUserID,
+				conversion,
+				payload,
+			)
 		}
 	}
 }
 
-func (q *QueryHandler) buildMessage(telegramUserID int64) interface{} {
+func (q *QueryHandler) buildMessage(
+	telegramUserID int64,
+	payload string,
+) interface{} {
 	if q.EventData.Message.Callback != nil {
 		return q.EventData.Message.Callback(telegramUserID)
 	}
 
 	if q.EventData.Message.OnConversion != nil {
-		q.handleConversions(telegramUserID)
+		q.handleConversions(telegramUserID, payload)
 	}
 
 	// get message by type
@@ -234,7 +249,7 @@ func (q *QueryHandler) buildMessage(telegramUserID int64) interface{} {
 }
 
 func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
-	msg := q.buildMessage(telegramUserID)
+	msg := q.buildMessage(telegramUserID, "")
 	q.buildButtons(telegramUserID)
 
 	var format = parseMode
@@ -246,7 +261,7 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 }
 
 func (q *QueryHandler) handleMessage(c tb.Context) error {
-	msg := q.buildMessage(c.Sender().ID)
+	msg := q.buildMessage(c.Sender().ID, c.Message().Payload)
 	q.buildButtons(c.Sender().ID)
 
 	if q.EventData.Message.OnEvent != nil {
@@ -296,7 +311,7 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
-	msg := q.buildMessage(c.Sender().ID)
+	msg := q.buildMessage(c.Sender().ID, c.Message().Payload)
 	q.buildButtons(c.Sender().ID)
 
 	return q.sendWithCheck(c, msg)
@@ -318,7 +333,11 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 		if err != nil {
 			log.Println(err)
 		} else {
-			msg := lockerMessageHandler.buildMessage(c.Sender().ID)
+			msg := lockerMessageHandler.buildMessage(
+				c.Sender().ID,
+				c.Message().Payload,
+			)
+
 			lockerMessageHandler.buildButtons(c.Sender().ID)
 			return lockerMessageHandler.send(
 				c.Sender().ID,
