@@ -178,18 +178,14 @@ func (f *Funnel) handleEvent(
 	return nil
 }
 
-func (q *QueryHandler) actionNotify(ctx tb.Context, action tb.ChatAction) {
-	if ctx == nil {
-		return
-	}
-
-	if err := q.Bot.Notify(ctx.Sender(), action); err != nil {
+func (q *QueryHandler) actionNotify(telegramUserID int64, action tb.ChatAction) {
+	if err := q.Bot.Notify(tb.ChatID(telegramUserID), action); err != nil {
 		log.Println("notify:", err)
 	}
 }
 
-func (q *QueryHandler) makeConversion(ctx tb.Context, conversion string) {
-	err := q.EventData.Message.OnConversion(ctx, conversion)
+func (q *QueryHandler) makeConversion(telegramUserID int64, conversion string) {
+	err := q.EventData.Message.OnConversion(telegramUserID, conversion)
 	if err != nil {
 		log.Printf(
 			"handle conversion %q in tgfun: %s\n",
@@ -199,26 +195,26 @@ func (q *QueryHandler) makeConversion(ctx tb.Context, conversion string) {
 	}
 }
 
-func (q *QueryHandler) handleConversions(ctx tb.Context) {
+func (q *QueryHandler) handleConversions(telegramUserID int64) {
 	if q.EventData.Message.Conversion != "" {
-		q.makeConversion(ctx, q.EventData.Message.Conversion)
+		q.makeConversion(telegramUserID, q.EventData.Message.Conversion)
 		return
 	}
 
 	if len(q.EventData.Message.Conversions) > 0 {
 		for _, conversion := range q.EventData.Message.Conversions {
-			q.makeConversion(ctx, conversion)
+			q.makeConversion(telegramUserID, conversion)
 		}
 	}
 }
 
-func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
-	if q.EventData.Message.Callback != nil && ctx != nil {
-		return q.EventData.Message.Callback(ctx)
+func (q *QueryHandler) buildMessage(telegramUserID int64) interface{} {
+	if q.EventData.Message.Callback != nil {
+		return q.EventData.Message.Callback(telegramUserID)
 	}
 
 	if q.EventData.Message.OnConversion != nil {
-		q.handleConversions(ctx)
+		q.handleConversions(telegramUserID)
 	}
 
 	// get message by type
@@ -226,19 +222,19 @@ func (q *QueryHandler) buildMessage(ctx tb.Context) interface{} {
 	default:
 		return getTextMessage(q.EventData.Message)
 	case MessageTypePhoto:
-		q.actionNotify(ctx, tb.UploadingPhoto)
+		q.actionNotify(telegramUserID, tb.UploadingPhoto)
 		return getPhotoMessage(q.EventData.Message, q.FilesRoot)
 	case MessageTypeDocument:
-		q.actionNotify(ctx, tb.UploadingDocument)
+		q.actionNotify(telegramUserID, tb.UploadingDocument)
 		return getDocumentMessage(q.EventData.Message, q.FilesRoot)
 	case MessageTypeVideo:
-		q.actionNotify(ctx, tb.UploadingVideo)
+		q.actionNotify(telegramUserID, tb.UploadingVideo)
 		return getVideoMessage(q.EventData.Message, q.FilesRoot)
 	}
 }
 
 func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
-	msg := q.buildMessage(nil)
+	msg := q.buildMessage(telegramUserID)
 	q.buildButtons(telegramUserID)
 
 	var format = parseMode
@@ -250,7 +246,7 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 }
 
 func (q *QueryHandler) handleMessage(c tb.Context) error {
-	msg := q.buildMessage(c)
+	msg := q.buildMessage(c.Sender().ID)
 	q.buildButtons(c.Sender().ID)
 
 	if q.EventData.Message.OnEvent != nil {
@@ -300,7 +296,7 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
-	msg := q.buildMessage(c)
+	msg := q.buildMessage(c.Sender().ID)
 	q.buildButtons(c.Sender().ID)
 
 	return q.sendWithCheck(c, msg)
@@ -322,7 +318,7 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 		if err != nil {
 			log.Println(err)
 		} else {
-			msg := lockerMessageHandler.buildMessage(c)
+			msg := lockerMessageHandler.buildMessage(c.Sender().ID)
 			lockerMessageHandler.buildButtons(c.Sender().ID)
 			return lockerMessageHandler.send(
 				c.Sender().ID,

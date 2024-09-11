@@ -97,11 +97,11 @@ type FileData struct {
 	PreviewImagePath string `json:"preview"`
 }
 
-type OnConversionCallback func(ctx tb.Context, conversionTag string) error
+type OnConversionCallback func(telegramUserID int64, conversionTag string) error
 
 type OnEventCallback func(tb.Context) error
 
-type BuildMessageCallback func(tb.Context) interface{}
+type BuildMessageCallback func(telegramUserID int64) interface{}
 
 // MessageButton - funnel event message button
 type MessageButton struct {
