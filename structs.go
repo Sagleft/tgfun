@@ -3,6 +3,7 @@ package tgfun
 import (
 	"database/sql"
 
+	"github.com/microcosm-cc/bluemonday"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -15,8 +16,9 @@ type Funnel struct {
 	OnWebAppCallback func(ctx tb.Context) error
 
 	// protected
-	bot      *tb.Bot
-	features funnelFeatures
+	bot       *tb.Bot
+	features  funnelFeatures
+	sanitizer *bluemonday.Policy
 }
 
 type funnelFeatures struct {

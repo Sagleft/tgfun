@@ -1,10 +1,13 @@
 package tgfun
 
+import "github.com/microcosm-cc/bluemonday"
+
 // NewFunnel - funnel constructor
 func NewFunnel(data FunnelData, script FunnelScript) *Funnel {
 	return &Funnel{
-		Data:   data,
-		Script: script,
+		Data:      data,
+		Script:    script,
+		sanitizer: bluemonday.StrictPolicy(),
 	}
 }
 

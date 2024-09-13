@@ -101,6 +101,18 @@ func (f *Funnel) handleTextEvents() {
 }
 
 func (f *Funnel) handleTextMessage(c tb.Context) error {
+	eventMessageID := strings.ToLower(f.sanitizer.Sanitize(c.Text()))
+
+	if _, isEventExists := f.Script[eventMessageID]; isEventExists {
+		q, err := f.GetEventQueryHandler(eventMessageID)
+		if err != nil {
+			return fmt.Errorf("get query handler: %w", err)
+		}
+
+		return q.handleMessage(c)
+	}
+
+	// handle commands
 	if f.features.Users == nil {
 		return nil
 	}
@@ -174,10 +186,6 @@ func (f *Funnel) handleEvent(
 	f.bot.Handle(&btnListener, q.handleButton)
 
 	// text query
-	if isUpper(eventMessageID) {
-		// отдельно обработаем команды, которые в верхнем регистре
-		f.bot.Handle(eventMessageID, q.handleMessage)
-	}
 	f.bot.Handle(strings.ToLower(eventMessageID), q.handleMessage)
 	return nil
 }
