@@ -154,7 +154,7 @@ func (q *QueryHandler) createChildHandler(messageID string) (*QueryHandler, erro
 		Script:         q.Script,
 		EventMessageID: messageID,
 		EventData:      q.Script[messageID],
-		Menu:           q.Menu,
+		Menu:           &tb.ReplyMarkup{},
 		ParseMode:      q.ParseMode,
 		Bot:            q.Bot,
 		FilesRoot:      q.FilesRoot,
@@ -278,7 +278,7 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 }
 
 func (q *QueryHandler) handleMessage(ctx tb.Context) error {
-	if ctx.Text() == startMessageCode && ctx.Message().Payload != "" {
+	if strings.HasPrefix(ctx.Text(), startMessageCode) && ctx.Message().Payload != "" {
 		tags := parseUTMTags(ctx.Message().Payload, q.sanitizer)
 		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
 		if tags.Campaign == "back" {
@@ -291,12 +291,17 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 					return fmt.Errorf("create child handler: %w", err)
 				}
 
-				return childHandler.handleMessage(ctx)
+				return childHandler.buildAndSend(ctx)
 			}
 			// эвент не найден, продолжим обработку стартового сообщения
+			log.Printf("event %q not found\n", eventID)
 		}
 	}
 
+	return q.buildAndSend(ctx)
+}
+
+func (q *QueryHandler) buildAndSend(ctx tb.Context) error {
 	msg := q.buildMessage(ctx.Sender().ID, ctx.Message().Payload)
 	q.buildButtons(ctx.Sender().ID)
 
