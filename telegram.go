@@ -388,7 +388,12 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 		}
 	}
 
-	return q.send(c.Sender().ID, msg, format)
+	var args = []interface{}{format}
+	if q.EventData.Message.DisablePreview {
+		args = append(args, tb.NoPreview)
+	}
+
+	return q.send(c.Sender().ID, msg, args...)
 }
 
 // проверим, можем ли отправить сообщение или есть какие-то блокирующие штуки
@@ -430,9 +435,9 @@ func (q *QueryHandler) isUserJoined(chatID int64, user tb.Recipient) (bool, erro
 func (q *QueryHandler) send(
 	chatID int64,
 	message interface{},
-	format string,
+	args ...interface{},
 ) error {
-	messageResponse, err := q.Bot.Send(tb.ChatID(chatID), message, q.Menu, format)
+	messageResponse, err := q.Bot.Send(tb.ChatID(chatID), message, q.Menu, args)
 	if err != nil {
 		return fmt.Errorf("send message: %w", err)
 	}
