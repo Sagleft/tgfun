@@ -86,7 +86,7 @@ type EventMessage struct {
 }
 
 type AudioData struct {
-	Path string `json:"audio"`
+	Path string `json:"path"`
 	Name string `json:"name"`
 }
 

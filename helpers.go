@@ -104,6 +104,7 @@ func getAudioMessage(message EventMessage, filesRoot string) interface{} {
 		filesRoot,
 	)
 	if !swissknife.IsFileExists(filePath) {
+		log.Printf("audio file %q not found\n", message.Audio.Path)
 		return getTextMessage(message)
 	}
 
