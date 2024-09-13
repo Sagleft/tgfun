@@ -174,7 +174,11 @@ func (f *Funnel) handleEvent(
 	f.bot.Handle(&btnListener, q.handleButton)
 
 	// text query
-	f.bot.Handle(eventMessageID, q.handleMessage)
+	if isUpper(eventMessageID) {
+		// отдельно обработаем команды, которые в верхнем регистре
+		f.bot.Handle(eventMessageID, q.handleMessage)
+	}
+	f.bot.Handle(strings.ToLower(eventMessageID), q.handleMessage)
 	return nil
 }
 

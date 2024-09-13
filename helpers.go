@@ -183,3 +183,8 @@ func addUtmTags(baseURL string, tags UTMTags) (string, error) {
 
 	return u.String(), nil
 }
+
+// isUpper проверяет, что строка полностью в верхнем регистре
+func isUpper(s string) bool {
+	return s == strings.ToUpper(s)
+}
