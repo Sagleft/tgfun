@@ -138,4 +138,5 @@ type QueryHandler struct {
 	Bot            *tb.Bot
 	FilesRoot      string // inherit from Funnel
 	Features       *funnelFeatures
+	sanitizer      *bluemonday.Policy
 }

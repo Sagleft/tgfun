@@ -141,6 +141,7 @@ func (f *Funnel) GetEventQueryHandler(
 		Bot:            f.bot,
 		FilesRoot:      f.Data.ImageRoot,
 		Features:       &f.features,
+		sanitizer:      f.sanitizer,
 	}, nil
 }
 
@@ -158,6 +159,7 @@ func (q *QueryHandler) createChildHandler(messageID string) (*QueryHandler, erro
 		Bot:            q.Bot,
 		FilesRoot:      q.FilesRoot,
 		Features:       q.Features,
+		sanitizer:      q.sanitizer,
 	}, nil
 }
 
@@ -275,24 +277,43 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 	return q.send(telegramUserID, msg, format)
 }
 
-func (q *QueryHandler) handleMessage(c tb.Context) error {
-	msg := q.buildMessage(c.Sender().ID, c.Message().Payload)
-	q.buildButtons(c.Sender().ID)
+func (q *QueryHandler) handleMessage(ctx tb.Context) error {
+	if ctx.Text() == startMessageCode && ctx.Message().Payload != "" {
+		tags := parseUTMTags(ctx.Message().Payload, q.sanitizer)
+		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
+		if tags.Campaign == "back" {
+			// найдем, есть ли эвент с таким ID
+			eventID := strings.ToLower(tags.Source)
+			if _, isEventExists := q.Script[eventID]; isEventExists {
+				// такой эвент есть
+				childHandler, err := q.createChildHandler(eventID)
+				if err != nil {
+					return fmt.Errorf("create child handler: %w", err)
+				}
+
+				return childHandler.handleMessage(ctx)
+			}
+			// эвент не найден, продолжим обработку стартового сообщения
+		}
+	}
+
+	msg := q.buildMessage(ctx.Sender().ID, ctx.Message().Payload)
+	q.buildButtons(ctx.Sender().ID)
 
 	if q.EventData.Message.OnEvent != nil {
-		if err := q.EventData.Message.OnEvent(c); err != nil {
+		if err := q.EventData.Message.OnEvent(ctx); err != nil {
 			return fmt.Errorf("handle event custom callback: %w", err)
 		}
 	}
 
 	if q.Features.Users != nil {
-		_, err := q.Features.Users.getUserData(c.Sender())
+		_, err := q.Features.Users.getUserData(ctx.Sender())
 		if err != nil {
 			return fmt.Errorf("get user data: %w", err)
 		}
 	}
 
-	return q.sendWithCheck(c, msg)
+	return q.sendWithCheck(ctx, msg)
 }
 
 func (f *Funnel) handleAdminMessage(c tb.Context) error {

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	swissknife "github.com/Sagleft/swiss-knife"
+	"github.com/microcosm-cc/bluemonday"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -184,7 +185,19 @@ func addUtmTags(baseURL string, tags UTMTags) (string, error) {
 	return u.String(), nil
 }
 
-// isUpper проверяет, что строка полностью в верхнем регистре
-func isUpper(s string) bool {
-	return s == strings.ToUpper(s)
+func parseUTMTags(payload string, sanitizer *bluemonday.Policy) UTMTags {
+	if sanitizer == nil {
+		log.Println("parse utm tags: sanitizer is not set")
+		return UTMTags{}
+	}
+
+	payloadParts := strings.Split(payload, "_")
+	if len(payloadParts) < 2 {
+		return UTMTags{}
+	}
+
+	return UTMTags{
+		Source:   sanitizer.Sanitize(payloadParts[0]),
+		Campaign: sanitizer.Sanitize(payloadParts[1]),
+	}
 }
