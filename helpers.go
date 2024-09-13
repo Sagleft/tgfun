@@ -115,6 +115,9 @@ func getAudioMessage(message EventMessage, filesRoot string) interface{} {
 	if message.Audio.Name != "" {
 		audio.FileName = message.Audio.Name
 	}
+	if message.Audio.Duration > 0 {
+		audio.Duration = message.Audio.Duration
+	}
 	if message.Text != "" {
 		audio.Caption = message.Text
 	}
