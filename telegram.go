@@ -388,7 +388,7 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 		}
 	}
 
-	var args = []interface{}{format}
+	var args = []interface{}{tb.ParseMode(format)}
 	if q.EventData.Message.DisablePreview {
 		args = append(args, tb.NoPreview)
 	}
@@ -437,7 +437,9 @@ func (q *QueryHandler) send(
 	message interface{},
 	args ...interface{},
 ) error {
-	messageResponse, err := q.Bot.Send(tb.ChatID(chatID), message, q.Menu, args)
+	args = append(args, q.Menu)
+
+	messageResponse, err := q.Bot.Send(tb.ChatID(chatID), message, args...)
 	if err != nil {
 		return fmt.Errorf("send message: %w", err)
 	}
