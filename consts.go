@@ -22,4 +22,5 @@ const (
 	MessageTypePhoto    MessageType = "photo"
 	MessageTypeDocument MessageType = "document"
 	MessageTypeVideo    MessageType = "video"
+	MessageTypeAudio    MessageType = "audio"
 )

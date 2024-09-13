@@ -73,6 +73,7 @@ type EventMessage struct {
 	// optional
 	Image            string               `json:"image"` // local filename or URL
 	File             FileData             `json:"file"`
+	Audio            AudioData            `json:"audio"`
 	Video            VideoData            `json:"video"`
 	Buttons          []MessageButton      `json:"buttons"`
 	Format           ParseFormat          `json:"format"`
@@ -82,6 +83,11 @@ type EventMessage struct {
 	OnConversion     OnConversionCallback `json:"-"`
 	PinThisMessage   bool                 `json:"pin"`
 	DisablePreview   bool                 `json:"disablePreview"`
+}
+
+type AudioData struct {
+	Path string `json:"audio"`
+	Name string `json:"name"`
 }
 
 type VideoData struct {

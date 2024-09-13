@@ -33,6 +33,10 @@ func getMessageType(message EventMessage) MessageType {
 		return MessageTypeVideo
 	}
 
+	if message.Audio.Path != "" {
+		return MessageTypeAudio
+	}
+
 	return MessageTypeText
 }
 
@@ -92,6 +96,29 @@ func getDocumentMessage(message EventMessage, filesRoot string) interface{} {
 	}
 
 	return doc
+}
+
+func getAudioMessage(message EventMessage, filesRoot string) interface{} {
+	filePath := getFilePath(
+		message.Audio.Path,
+		filesRoot,
+	)
+	if !swissknife.IsFileExists(filePath) {
+		return getTextMessage(message)
+	}
+
+	audio := &tb.Audio{
+		File: tb.FromDisk(filePath),
+	}
+
+	if message.Audio.Name != "" {
+		audio.FileName = message.Audio.Name
+	}
+	if message.Text != "" {
+		audio.Caption = message.Text
+	}
+
+	return audio
 }
 
 func getVideoMessage(message EventMessage, filesRoot string) interface{} {

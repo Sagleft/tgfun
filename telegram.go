@@ -245,6 +245,9 @@ func (q *QueryHandler) buildMessage(
 	case MessageTypeVideo:
 		q.actionNotify(telegramUserID, tb.UploadingVideo)
 		return getVideoMessage(q.EventData.Message, q.FilesRoot)
+	case MessageTypeAudio:
+		q.actionNotify(telegramUserID, tb.UploadingAudio)
+		return getAudioMessage(q.EventData.Message, q.FilesRoot)
 	}
 }
 
