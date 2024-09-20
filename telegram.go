@@ -283,22 +283,35 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
 		if tags.Campaign == "back" {
 			// найдем, есть ли эвент с таким ID
+			// попробуем найти в нижнем регистре
 			eventID := strings.ToLower(tags.Source)
 			if _, isEventExists := q.Script[eventID]; isEventExists {
 				// такой эвент есть
-				childHandler, err := q.createChildHandler(eventID)
-				if err != nil {
-					return fmt.Errorf("create child handler: %w", err)
-				}
-
-				return childHandler.buildAndSend(ctx)
+				return q.handleChildQuery(ctx, eventID)
 			}
+
+			// попробуем найти в верхнем регистре
+			eventID = tags.Source
+			if _, isEventExists := q.Script[eventID]; isEventExists {
+				// такой эвент есть
+				return q.handleChildQuery(ctx, eventID)
+			}
+
 			// эвент не найден, продолжим обработку стартового сообщения
 			log.Printf("event %q not found\n", eventID)
 		}
 	}
 
 	return q.buildAndSend(ctx)
+}
+
+func (q *QueryHandler) handleChildQuery(ctx tb.Context, eventID string) error {
+	childHandler, err := q.createChildHandler(eventID)
+	if err != nil {
+		return fmt.Errorf("create child handler: %w", err)
+	}
+
+	return childHandler.buildAndSend(ctx)
 }
 
 func (q *QueryHandler) buildAndSend(ctx tb.Context) error {
