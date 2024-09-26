@@ -281,7 +281,7 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 	if strings.HasPrefix(ctx.Text(), startMessageCode) && ctx.Message().Payload != "" {
 		sanitizedPayload := q.sanitizer.Sanitize(ctx.Message().Payload)
 
-		tags, err := filterUserPayload(sanitizedPayload)
+		tags, err := FilterUserPayload(sanitizedPayload)
 		if err != nil {
 			log.Println("filter user payload:", err)
 			return q.buildAndSend(ctx)

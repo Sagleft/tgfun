@@ -12,7 +12,7 @@ func TestFilterUserPayloadSimple(t *testing.T) {
 	payloadRaw := "dzen_org"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -25,7 +25,7 @@ func TestFilterUserPayloadYclid(t *testing.T) {
 	payloadRaw := "yandex_search_100"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -39,7 +39,7 @@ func TestFilterUserPayloadNotSet(t *testing.T) {
 	payloadRaw := ""
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -53,7 +53,7 @@ func TestFilterUserPayloadNotSetSome(t *testing.T) {
 	payloadRaw := "dzen"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestFilterUserPayloadBacklink(t *testing.T) {
 	payloadRaw := "howItWorks_back"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestFilterUserPayloadBase64EventID(t *testing.T) {
 	payloadRaw := "cz1kemVuJmM9b3JnJmI9ZXZlbnRJRA"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestFilterUserPayloadBase64(t *testing.T) {
 	payloadRaw := "cz1kemVuJmM9b3Jn"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -112,7 +112,7 @@ func TestFilterUserPayloadBase64Yclid(t *testing.T) {
 	payloadRaw := "cz15YW5kZXgmYz1zZWFyY2gmeT0xMDA"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)
@@ -127,7 +127,7 @@ func TestFilterUserPayloadBase64OnlyEventID(t *testing.T) {
 	payloadRaw := "Yj1ldmVudElE"
 
 	// when
-	payload, err := filterUserPayload(payloadRaw)
+	payload, err := FilterUserPayload(payloadRaw)
 
 	// then
 	require.NoError(t, err)

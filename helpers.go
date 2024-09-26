@@ -191,7 +191,7 @@ func addUtmTags(baseURL string, tags UTMTags) (string, error) {
 // payload format: source_campaign_yclid
 // example: dzen_start
 // or: dzen_start_100
-func filterUserPayload(
+func FilterUserPayload(
 	payloadRaw string,
 ) (UserPayload, error) {
 	if payloadRaw == "" {
