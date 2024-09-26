@@ -242,7 +242,7 @@ func parseUTMSimple(payloadRaw string) (UserPayload, error) {
 	var yclid string
 	if len(parts) > 2 {
 		yclidRaw := LimitStringLen(parts[2], 64)
-		if isNumber(yclidRaw) {
+		if IsNumber(yclidRaw) {
 			yclid = yclidRaw
 		}
 	}
@@ -310,8 +310,8 @@ func isBase64(encoded string) bool {
 	return false
 }
 
-// isNumber проверяет, является ли строка числом (целым или дробным).
-func isNumber(s string) bool {
+// IsNumber проверяет, является ли строка числом (целым или дробным).
+func IsNumber(s string) bool {
 	// Проверяем, может ли строка быть преобразована в целое число
 	if _, err := strconv.Atoi(s); err == nil {
 		return true
