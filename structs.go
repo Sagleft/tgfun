@@ -2,16 +2,34 @@ package tgfun
 
 import (
 	"database/sql"
+	"encoding/json"
+	"log"
 
 	"github.com/microcosm-cc/bluemonday"
 	tb "gopkg.in/telebot.v3"
 )
 
 type UserPayload struct {
-	UTMSource       string
-	UTMCampaign     string
-	BackLinkEventID string
-	Yclid           string
+	UTMSource       string `json:"s"`
+	UTMCampaign     string `json:"c"`
+	BackLinkEventID string `json:"b"`
+	Yclid           string `json:"y"`
+}
+
+func (p UserPayload) String() string {
+	data, err := json.Marshal(p)
+	if err != nil {
+		log.Println("encode payload:", err)
+		return "{}"
+	}
+
+	return string(data)
+}
+
+func (p UserPayload) IsEmpty() bool {
+	return p.UTMSource == "" &&
+		p.UTMCampaign == "" &&
+		p.BackLinkEventID == ""
 }
 
 // Funnel - telegram bot funnel
