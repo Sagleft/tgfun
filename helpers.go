@@ -1,13 +1,16 @@
 package tgfun
 
 import (
+	"encoding/base64"
+	"errors"
 	"fmt"
 	"log"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 
 	swissknife "github.com/Sagleft/swiss-knife"
-	"github.com/microcosm-cc/bluemonday"
 	tb "gopkg.in/telebot.v3"
 )
 
@@ -185,19 +188,150 @@ func addUtmTags(baseURL string, tags UTMTags) (string, error) {
 	return u.String(), nil
 }
 
-func parseUTMTags(payload string, sanitizer *bluemonday.Policy) UTMTags {
-	if sanitizer == nil {
-		log.Println("parse utm tags: sanitizer is not set")
-		return UTMTags{}
+// payload format: source_campaign_yclid
+// example: dzen_start
+// or: dzen_start_100
+func filterUserPayload(
+	payloadRaw string,
+) (UserPayload, error) {
+	if payloadRaw == "" {
+		return UserPayload{}, nil
 	}
 
-	payloadParts := strings.Split(payload, "_")
-	if len(payloadParts) < 2 {
-		return UTMTags{}
+	if len(payloadRaw) > 168 {
+		return UserPayload{}, errors.New("ignore heavy user payload")
 	}
 
-	return UTMTags{
-		Source:   sanitizer.Sanitize(payloadParts[0]),
-		Campaign: sanitizer.Sanitize(payloadParts[1]),
+	if isBase64(payloadRaw) {
+		return parseUTMBase64(payloadRaw)
 	}
+
+	return parseUTMSimple(payloadRaw)
+}
+
+func parseUTMBase64(payloadRaw string) (UserPayload, error) {
+	payloadBytes, err := decodeBase64WithoutPadding(payloadRaw)
+	if err != nil {
+		return UserPayload{}, fmt.Errorf("base64: %w", err)
+	}
+
+	payloadData := string(payloadBytes)
+
+	params, err := url.ParseQuery(payloadData)
+	if err != nil {
+		return UserPayload{}, fmt.Errorf("parse url data: %w", err)
+	}
+
+	return UserPayload{
+		UTMSource:       params.Get("s"),
+		UTMCampaign:     params.Get("c"),
+		BackLinkEventID: params.Get("b"),
+		Yclid:           params.Get("y"),
+	}, nil
+}
+
+func parseUTMSimple(payloadRaw string) (UserPayload, error) {
+	parts := strings.Split(payloadRaw, "_")
+	if len(parts) < 2 {
+		return UserPayload{}, fmt.Errorf("invalid payload: %q", payloadRaw)
+	}
+
+	utmSource := LimitStringLen(parts[0], 24)
+	utmCampaign := LimitStringLen(parts[1], 24)
+
+	var yclid string
+	if len(parts) > 2 {
+		yclidRaw := LimitStringLen(parts[2], 64)
+		if isNumber(yclidRaw) {
+			yclid = yclidRaw
+		}
+	}
+
+	payload := UserPayload{
+		UTMSource:   utmSource,
+		UTMCampaign: utmCampaign,
+		Yclid:       yclid,
+	}
+
+	if utmCampaign == "back" {
+		payload.BackLinkEventID = utmSource
+	}
+
+	return payload, nil
+}
+
+// decodeBase64WithoutPadding декодирует строку Base64, которая может не содержать символов "=".
+func decodeBase64WithoutPadding(encoded string) ([]byte, error) {
+	// Вычисляем количество недостающих символов "="
+	padding := len(encoded) % 4
+	if padding > 0 {
+		// Добавляем недостающие символы "="
+		switch padding {
+		case 1:
+			return nil, fmt.Errorf(
+				"not enought data in: %q",
+				encoded,
+			)
+		case 2:
+			encoded += "=="
+		case 3:
+			encoded += "="
+		}
+	}
+
+	// Декодируем строку Base64
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return nil, fmt.Errorf("decode: %w", err)
+	}
+
+	return decoded, nil
+}
+
+// isBase64 проверяет, является ли строка корректной строкой Base64.
+func isBase64(encoded string) bool {
+	encoded = strings.ReplaceAll(encoded, "=", "")
+
+	// Регулярное выражение для проверки символов Base64
+	base64Regex := `^[A-Za-z0-9+/]*$`
+
+	// Проверяем, соответствует ли строка регулярному выражению
+	matched, err := regexp.MatchString(base64Regex, encoded)
+	if err != nil {
+		return false
+	}
+
+	// Проверяем длину строки: она должна быть кратна 4 или 2 или 3
+	length := len(encoded)
+	if length%4 == 0 || length%4 == 2 || length%4 == 3 {
+		return matched
+	}
+
+	return false
+}
+
+// isNumber проверяет, является ли строка числом (целым или дробным).
+func isNumber(s string) bool {
+	// Проверяем, может ли строка быть преобразована в целое число
+	if _, err := strconv.Atoi(s); err == nil {
+		return true
+	}
+
+	// Проверяем, может ли строка быть преобразована в число с плавающей запятой
+	if _, err := strconv.ParseFloat(s, 64); err == nil {
+		return true
+	}
+	return false
+}
+
+func LimitStringLen(str string, maxLength int) string {
+	if maxLength == 0 {
+		return ""
+	}
+
+	if len(str) == maxLength || maxLength > len(str) {
+		return str
+	}
+
+	return str[0:maxLength]
 }

@@ -7,6 +7,13 @@ import (
 	tb "gopkg.in/telebot.v3"
 )
 
+type UserPayload struct {
+	UTMSource       string
+	UTMCampaign     string
+	BackLinkEventID string
+	Yclid           string
+}
+
 // Funnel - telegram bot funnel
 type Funnel struct {
 	// public

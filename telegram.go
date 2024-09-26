@@ -279,19 +279,26 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 
 func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 	if strings.HasPrefix(ctx.Text(), startMessageCode) && ctx.Message().Payload != "" {
-		tags := parseUTMTags(ctx.Message().Payload, q.sanitizer)
+		sanitizedPayload := q.sanitizer.Sanitize(ctx.Message().Payload)
+
+		tags, err := filterUserPayload(sanitizedPayload)
+		if err != nil {
+			log.Println("filter user payload:", err)
+			return q.buildAndSend(ctx)
+		}
+
 		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
-		if tags.Campaign == "back" {
+		if tags.BackLinkEventID != "" {
 			// найдем, есть ли эвент с таким ID
 			// попробуем найти в нижнем регистре
-			eventID := strings.ToLower(tags.Source)
+			eventID := strings.ToLower(tags.BackLinkEventID)
 			if _, isEventExists := q.Script[eventID]; isEventExists {
 				// такой эвент есть
 				return q.handleChildQuery(ctx, eventID)
 			}
 
 			// попробуем найти в верхнем регистре
-			eventID = tags.Source
+			eventID = tags.BackLinkEventID
 			if _, isEventExists := q.Script[eventID]; isEventExists {
 				// такой эвент есть
 				return q.handleChildQuery(ctx, eventID)
