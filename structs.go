@@ -116,7 +116,7 @@ type FileData struct {
 type OnConversionCallback func(
 	telegramUserID int64,
 	conversionTag string,
-	payload string,
+	payload UserPayload,
 ) error
 
 type OnEventCallback func(tb.Context) error

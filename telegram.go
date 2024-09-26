@@ -201,7 +201,7 @@ func (q *QueryHandler) actionNotify(telegramUserID int64, action tb.ChatAction) 
 func (q *QueryHandler) makeConversion(
 	telegramUserID int64,
 	conversion string,
-	payload string,
+	payload UserPayload,
 ) {
 	err := q.EventData.Message.OnConversion(telegramUserID, conversion, payload)
 	if err != nil {
@@ -213,7 +213,7 @@ func (q *QueryHandler) makeConversion(
 	}
 }
 
-func (q *QueryHandler) handleConversions(telegramUserID int64, payload string) {
+func (q *QueryHandler) handleConversions(telegramUserID int64, payload UserPayload) {
 	if q.EventData.Message.Conversion != "" {
 		q.makeConversion(
 			telegramUserID,
@@ -236,7 +236,7 @@ func (q *QueryHandler) handleConversions(telegramUserID int64, payload string) {
 
 func (q *QueryHandler) buildMessage(
 	telegramUserID int64,
-	payload string,
+	payload UserPayload,
 ) interface{} {
 	if q.EventData.Message.Callback != nil {
 		return q.EventData.Message.Callback(telegramUserID)
@@ -266,7 +266,7 @@ func (q *QueryHandler) buildMessage(
 }
 
 func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
-	msg := q.buildMessage(telegramUserID, "")
+	msg := q.buildMessage(telegramUserID, UserPayload{})
 	q.buildButtons(telegramUserID)
 
 	var format = parseMode
@@ -281,27 +281,27 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 	if strings.HasPrefix(ctx.Text(), startMessageCode) && ctx.Message().Payload != "" {
 		sanitizedPayload := q.sanitizer.Sanitize(ctx.Message().Payload)
 
-		tags, err := FilterUserPayload(sanitizedPayload)
+		payload, err := FilterUserPayload(sanitizedPayload)
 		if err != nil {
 			log.Println("filter user payload:", err)
-			return q.buildAndSend(ctx)
+			return q.buildAndSend(ctx, payload)
 		}
 
 		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
-		if tags.BackLinkEventID != "" {
+		if payload.BackLinkEventID != "" {
 			// найдем, есть ли эвент с таким ID
 			// попробуем найти в нижнем регистре
-			eventID := strings.ToLower(tags.BackLinkEventID)
+			eventID := strings.ToLower(payload.BackLinkEventID)
 			if _, isEventExists := q.Script[eventID]; isEventExists {
 				// такой эвент есть
-				return q.handleChildQuery(ctx, eventID)
+				return q.handleChildQuery(ctx, eventID, payload)
 			}
 
 			// попробуем найти в верхнем регистре
-			eventID = tags.BackLinkEventID
+			eventID = payload.BackLinkEventID
 			if _, isEventExists := q.Script[eventID]; isEventExists {
 				// такой эвент есть
-				return q.handleChildQuery(ctx, eventID)
+				return q.handleChildQuery(ctx, eventID, payload)
 			}
 
 			// эвент не найден, продолжим обработку стартового сообщения
@@ -309,20 +309,24 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 		}
 	}
 
-	return q.buildAndSend(ctx)
+	return q.buildAndSend(ctx, UserPayload{})
 }
 
-func (q *QueryHandler) handleChildQuery(ctx tb.Context, eventID string) error {
+func (q *QueryHandler) handleChildQuery(
+	ctx tb.Context,
+	eventID string,
+	payload UserPayload,
+) error {
 	childHandler, err := q.createChildHandler(eventID)
 	if err != nil {
 		return fmt.Errorf("create child handler: %w", err)
 	}
 
-	return childHandler.buildAndSend(ctx)
+	return childHandler.buildAndSend(ctx, payload)
 }
 
-func (q *QueryHandler) buildAndSend(ctx tb.Context) error {
-	msg := q.buildMessage(ctx.Sender().ID, ctx.Message().Payload)
+func (q *QueryHandler) buildAndSend(ctx tb.Context, payload UserPayload) error {
+	msg := q.buildMessage(ctx.Sender().ID, payload)
 	q.buildButtons(ctx.Sender().ID)
 
 	if q.EventData.Message.OnEvent != nil {
@@ -338,7 +342,7 @@ func (q *QueryHandler) buildAndSend(ctx tb.Context) error {
 		}
 	}
 
-	return q.sendWithCheck(ctx, msg)
+	return q.sendWithCheck(ctx, msg, payload)
 }
 
 func (f *Funnel) handleAdminMessage(c tb.Context) error {
@@ -372,13 +376,18 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
-	msg := q.buildMessage(c.Sender().ID, c.Message().Payload)
+	// button events doesn't have payload
+	msg := q.buildMessage(c.Sender().ID, UserPayload{})
 	q.buildButtons(c.Sender().ID)
 
-	return q.sendWithCheck(c, msg)
+	return q.sendWithCheck(c, msg, UserPayload{})
 }
 
-func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
+func (q *QueryHandler) sendWithCheck(
+	c tb.Context,
+	msg interface{},
+	payload UserPayload,
+) error {
 	var format = parseMode
 	if q.EventData.Message.Format != "" {
 		format = string(q.EventData.Message.Format)
@@ -396,7 +405,7 @@ func (q *QueryHandler) sendWithCheck(c tb.Context, msg interface{}) error {
 		} else {
 			msg := lockerMessageHandler.buildMessage(
 				c.Sender().ID,
-				c.Message().Payload,
+				payload,
 			)
 
 			lockerMessageHandler.buildButtons(c.Sender().ID)
