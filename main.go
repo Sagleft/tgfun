@@ -46,6 +46,7 @@ type UserInputFeature struct {
 	InputVerifiedEventID string
 	InvalidFormatEventID string
 	OnEventVerified      func(telegramUserID int64, input string)
+	GetUserInputCallback func(telegramUserID int64) (string, error)
 
 	compiledRegexp *regexp.Regexp
 }

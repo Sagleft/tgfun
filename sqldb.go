@@ -3,7 +3,6 @@ package tgfun
 import (
 	"database/sql"
 	"errors"
-	"log"
 	"strings"
 
 	tb "gopkg.in/telebot.v3"
@@ -11,13 +10,6 @@ import (
 
 func isSQLErrNoRows(err error) bool {
 	return err == sql.ErrNoRows || strings.Contains(err.Error(), "no rows in result set")
-}
-
-func closeRows(rows *sql.Rows) {
-	if rows == nil {
-		return
-	}
-	rows.Close()
 }
 
 func (uft *UsersFeature) getUserData(sender *tb.User) (*userData, error) {
@@ -83,25 +75,4 @@ func (uft *UsersFeature) saveUser(user *userData) error {
 	}
 	user.ID = userID
 	return nil
-}
-
-func (uft *UsersFeature) getUsersTelegramIDs() ([]int64, error) {
-	sqlQuery := "SELECT tid FROM " + uft.TableName
-	rows, err := uft.DBConn.Query(sqlQuery)
-	defer closeRows(rows)
-	if err != nil {
-		return nil, errors.New("faile to select user IDs: " + err.Error())
-	}
-
-	ids := []int64{}
-	var newID int64
-	for rows.Next() {
-		err := rows.Scan(&newID)
-		if err != nil {
-			log.Println("failed to scan user row: " + err.Error())
-			continue
-		}
-		ids = append(ids, newID)
-	}
-	return ids, nil
 }

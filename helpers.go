@@ -1,6 +1,7 @@
 package tgfun
 
 import (
+	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -44,11 +45,50 @@ func getMessageType(message EventMessage) MessageType {
 	return MessageTypeText
 }
 
-func getPhotoMessage(message EventMessage, filesRoot string) interface{} {
+func (q *QueryHandler) getPhotoMessage(
+	message EventMessage,
+	filesRoot string,
+	telegramUserID int64,
+) interface{} {
 	photo := &tb.Photo{}
 	if strings.Contains(message.Image, "http") {
+		// external image
 		photo.File = tb.FromURL(message.Image)
+	} else if message.Image == "parametric" {
+		// get image
+		if !q.Features.IsUserInputFeatureActive() {
+			log.Println("user input feature is disabled")
+			return message.Text
+		}
+
+		input, err := q.Features.UserInput.GetUserInputCallback(telegramUserID)
+		if err != nil {
+			log.Println("get user input:", err)
+			return message.Text
+		}
+
+		if message.ImageData.ArgumentType != "userInput" {
+			log.Println(
+				"unknown image argument type:",
+				message.ImageData.ArgumentType,
+			)
+		}
+
+		imageURL := fmt.Sprintf(
+			message.ImageData.URLFormat,
+			input,
+		)
+
+		imageData, err := swissknife.HttpGET(imageURL)
+		if err != nil {
+			log.Println("get image:", err)
+			return message.Text
+		}
+
+		reader := bytes.NewReader(imageData)
+		photo.File = tb.FromReader(reader)
 	} else {
+		// local image
 		filePath := getFilePath(message.Image, filesRoot)
 		if !swissknife.IsFileExists(filePath) {
 			return message.Text // use plain text, when file not exists
@@ -56,6 +96,8 @@ func getPhotoMessage(message EventMessage, filesRoot string) interface{} {
 
 		photo.File = tb.FromDisk(filePath)
 	}
+
+	// add message text
 	if message.Text != "" {
 		photo.Caption = message.Text
 	}

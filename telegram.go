@@ -287,7 +287,11 @@ func (q *QueryHandler) buildMessage(
 		return getTextMessage(q.EventData.Message)
 	case MessageTypePhoto:
 		q.actionNotify(telegramUserID, tb.UploadingPhoto)
-		return getPhotoMessage(q.EventData.Message, q.FilesRoot)
+		return q.getPhotoMessage(
+			q.EventData.Message,
+			q.FilesRoot,
+			telegramUserID,
+		)
 	case MessageTypeDocument:
 		q.actionNotify(telegramUserID, tb.UploadingDocument)
 		return getDocumentMessage(q.EventData.Message, q.FilesRoot)
