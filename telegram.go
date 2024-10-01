@@ -134,7 +134,10 @@ func (f *Funnel) handleCustomUserInput(ctx tb.Context, input string) error {
 	}
 
 	// input verified. send success event
-	f.features.UserInput.OnEventVerified(input)
+	f.features.UserInput.OnEventVerified(
+		ctx.Sender().ID,
+		input,
+	)
 	return f.sendEventToUser(ctx, f.features.UserInput.InputVerifiedEventID)
 }
 

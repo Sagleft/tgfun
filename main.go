@@ -45,7 +45,7 @@ type UserInputFeature struct {
 	Regexp               string
 	InputVerifiedEventID string
 	InvalidFormatEventID string
-	OnEventVerified      func(string)
+	OnEventVerified      func(telegramUserID int64, input string)
 
 	compiledRegexp *regexp.Regexp
 }
