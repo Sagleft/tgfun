@@ -1,6 +1,11 @@
 package tgfun
 
-import "github.com/microcosm-cc/bluemonday"
+import (
+	"fmt"
+	"regexp"
+
+	"github.com/microcosm-cc/bluemonday"
+)
 
 // NewFunnel - funnel constructor
 func NewFunnel(data FunnelData, script FunnelScript) *Funnel {
@@ -37,11 +42,22 @@ func (f *funnelFeatures) IsUTMTagsFeatureActive() bool {
 }
 
 type UserInputFeature struct {
-	Regexp string
+	Regexp               string
+	InputVerifiedEventID string
+	InvalidFormatEventID string
+	OnEventVerified      func(string)
+
+	compiledRegexp *regexp.Regexp
 }
 
-func (f *Funnel) EnableUserInputFeature(feature UserInputFeature) {
+func (f *Funnel) EnableUserInputFeature(feature UserInputFeature) error {
+	var err error
 	f.features.UserInput = &feature
+	f.features.UserInput.compiledRegexp, err = regexp.Compile(feature.Regexp)
+	if err != nil {
+		return fmt.Errorf("compile regexp: %w", err)
+	}
+	return nil
 }
 
 func (f *funnelFeatures) IsUserInputFeatureActive() bool {

@@ -100,8 +100,9 @@ func (f *Funnel) handleTextEvents() {
 	f.bot.Handle(tb.OnText, f.handleTextMessage)
 }
 
-func (f *Funnel) handleTextMessage(c tb.Context) error {
-	eventMessageID := strings.ToLower(f.sanitizer.Sanitize(c.Text()))
+func (f *Funnel) handleTextMessage(ctx tb.Context) error {
+	sanitizedText := strings.Trim(f.sanitizer.Sanitize(ctx.Text()), " ")
+	eventMessageID := strings.ToLower(sanitizedText)
 
 	if _, isEventExists := f.Script[eventMessageID]; isEventExists {
 		q, err := f.GetEventQueryHandler(eventMessageID)
@@ -109,16 +110,47 @@ func (f *Funnel) handleTextMessage(c tb.Context) error {
 			return fmt.Errorf("get query handler: %w", err)
 		}
 
-		return q.handleMessage(c)
+		return q.handleMessage(ctx)
 	}
 
+	if f.features.IsUserInputFeatureActive() {
+		return f.handleCustomUserInput(ctx, sanitizedText)
+	}
+	return nil
+
 	// handle commands
-	if f.features.Users == nil {
+	//if f.features.Users == nil {
+	//	return nil
+	//}
+	//if c.Chat().ID == f.features.Users.AdminChatID {
+	//	return f.handleAdminMessage(c)
+	//}
+}
+
+func (f *Funnel) handleCustomUserInput(ctx tb.Context, input string) error {
+	if !f.features.UserInput.compiledRegexp.MatchString(input) {
+		// input not verified. send fallback event to user
+		return f.sendEventToUser(ctx, f.features.UserInput.InvalidFormatEventID)
+	}
+
+	// input verified. send success event
+	f.features.UserInput.OnEventVerified(input)
+	return f.sendEventToUser(ctx, f.features.UserInput.InputVerifiedEventID)
+}
+
+func (f *Funnel) sendEventToUser(ctx tb.Context, eventID string) error {
+	if eventID == "" {
+		log.Println("event ID is not set. skip")
 		return nil
 	}
 
-	if c.Chat().ID == f.features.Users.AdminChatID {
-		return f.handleAdminMessage(c)
+	q, err := f.GetEventQueryHandler(eventID)
+	if err != nil {
+		return fmt.Errorf("get event query handler: %w", err)
+	}
+
+	if err := q.buildAndSend(ctx, UserPayload{}); err != nil {
+		return fmt.Errorf("build and send: %w", err)
 	}
 	return nil
 }
@@ -345,6 +377,7 @@ func (q *QueryHandler) buildAndSend(ctx tb.Context, payload UserPayload) error {
 	return q.sendWithCheck(ctx, msg, payload)
 }
 
+/*
 func (f *Funnel) handleAdminMessage(c tb.Context) error {
 	if !strings.HasPrefix(c.Text(), adminPostToAllPrefix) {
 		if _, err := f.bot.Send(c.Sender(), "Не могу разобрать сообщение"); err != nil {
@@ -371,7 +404,7 @@ func (f *Funnel) handleAdminMessage(c tb.Context) error {
 		}
 	}
 	return nil
-}
+}*/
 
 func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
