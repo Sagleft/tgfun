@@ -47,8 +47,9 @@ type Funnel struct {
 }
 
 type funnelFeatures struct {
-	Users *UsersFeature
-	UTM   *UTMTagsFeature
+	Users     *UsersFeature
+	UTM       *UTMTagsFeature
+	UserInput *UserInputFeature
 }
 
 // UsersFeature - feature to enable users db

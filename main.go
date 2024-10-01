@@ -35,3 +35,15 @@ func (f *Funnel) EnableUTMTagsFeauture(feature UTMTagsFeature) {
 func (f *funnelFeatures) IsUTMTagsFeatureActive() bool {
 	return f.UTM != nil
 }
+
+type UserInputFeature struct {
+	Regexp string
+}
+
+func (f *Funnel) EnableUserInputFeature(feature UserInputFeature) {
+	f.features.UserInput = &feature
+}
+
+func (f *funnelFeatures) IsUserInputFeatureActive() bool {
+	return f.UserInput != nil
+}
