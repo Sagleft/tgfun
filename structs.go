@@ -107,6 +107,7 @@ type EventMessage struct {
 	Buttons          []MessageButton      `json:"buttons"`
 	Format           ParseFormat          `json:"format"`
 	ButtonsIsColumns bool                 `json:"buttonsIsColumns"`
+	ButtonsSplit     int                  `json:"buttonsSplit"`
 	Conversion       string               `json:"conversion"`  // optional
 	Conversions      []string             `json:"conversions"` // optional
 	OnConversion     OnConversionCallback `json:"-"`

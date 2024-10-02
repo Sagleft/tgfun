@@ -563,7 +563,31 @@ func (q *QueryHandler) buildButtons(telegramUserID int64) {
 		if q.EventData.Message.ButtonsIsColumns {
 			q.Menu.Inline(rows...)
 		} else {
-			q.Menu.Inline(q.Menu.Row(btns...))
+			if q.EventData.Message.ButtonsSplit == 0 {
+				q.Menu.Inline(q.Menu.Row(btns...))
+			}
+
+			var rows []tb.Row
+			var btnsInRow []tb.Btn
+			for _, btn := range btns {
+				btnsInRow = append(btnsInRow, btn)
+
+				if len(btnsInRow) >= q.EventData.Message.ButtonsSplit {
+					rows = append(
+						rows,
+						q.Menu.Row(btnsInRow...),
+					)
+					btnsInRow = make([]tb.Btn, 0)
+				}
+			}
+			if len(btnsInRow) > 0 {
+				rows = append(
+					rows,
+					q.Menu.Row(btnsInRow...),
+				)
+			}
+
+			q.Menu.Inline(rows...)
 		}
 	}
 }
