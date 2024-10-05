@@ -55,8 +55,6 @@ func (f *Funnel) Run() error {
 		return fmt.Errorf("handle script events: %w", err)
 	}
 
-	f.handleAdditionalEvents()
-
 	if f.OnWebAppCallback != nil {
 		f.bot.Handle(tb.OnWebApp, f.OnWebAppCallback)
 	}
@@ -65,18 +63,6 @@ func (f *Funnel) Run() error {
 
 	go f.bot.Start()
 	return nil
-}
-
-func (f *Funnel) handleAdditionalEvents() {
-	f.bot.Handle(tb.OnUserShared, func(ctx tb.Context) error {
-		data, err := json.MarshalIndent(ctx, "", "	")
-		if err != nil {
-			return fmt.Errorf("json encode: %w", err)
-		}
-
-		fmt.Println(string(data))
-		return nil
-	})
 }
 
 func (f *Funnel) SetupOnWebAppLaunchCallback(cb func(ctx tb.Context) error) {
@@ -127,6 +113,13 @@ func (f *Funnel) handleTextMessage(ctx tb.Context) error {
 
 		return q.handleMessage(ctx)
 	}
+
+	data, err := json.MarshalIndent(ctx, "", "	")
+	if err != nil {
+		return fmt.Errorf("json encode: %w", err)
+	}
+
+	fmt.Println(string(data))
 
 	if f.features.IsUserInputFeatureActive() {
 		return f.handleCustomUserInput(ctx, sanitizedText)
