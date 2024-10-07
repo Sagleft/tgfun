@@ -131,8 +131,13 @@ func (f *Funnel) handleCustomCommand(ctx tb.Context) error {
 	messageText := ctx.Message().Text
 
 	if strings.HasPrefix(messageText, "/") &&
-		!strings.HasPrefix(messageText, "/start") &&
-		strings.Contains(messageText, " ") {
+		!strings.HasPrefix(messageText, "/start") {
+		if !strings.Contains(messageText, " ") {
+			return f.features.CustomCommands.Callback(
+				ctx, messageText, "",
+			)
+		}
+
 		parts := strings.Split(messageText, " ")
 		if len(parts) < 2 {
 			return errors.New("not enought command parts")
