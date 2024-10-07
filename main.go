@@ -64,3 +64,11 @@ func (f *Funnel) EnableUserInputFeature(feature UserInputFeature) error {
 func (f *funnelFeatures) IsUserInputFeatureActive() bool {
 	return f.UserInput != nil
 }
+
+func (f *Funnel) EnableCustomCommandsFeature(feature CustomCommandsFeature) {
+	f.features.CustomCommands = &feature
+}
+
+func (f *funnelFeatures) IsCustomCommandsFeatureActive() bool {
+	return f.CustomCommands != nil
+}

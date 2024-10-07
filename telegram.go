@@ -113,18 +113,37 @@ func (f *Funnel) handleTextMessage(ctx tb.Context) error {
 		return q.handleMessage(ctx)
 	}
 
+	if f.features.IsCustomCommandsFeatureActive() {
+		return f.handleCustomCommand(ctx)
+	}
+
 	if f.features.IsUserInputFeatureActive() {
 		return f.handleCustomUserInput(ctx, sanitizedText)
 	}
 	return nil
 
-	// handle commands
-	//if f.features.Users == nil {
-	//	return nil
-	//}
 	//if c.Chat().ID == f.features.Users.AdminChatID {
 	//	return f.handleAdminMessage(c)
 	//}
+}
+
+func (f *Funnel) handleCustomCommand(ctx tb.Context) error {
+	messageText := ctx.Message().Text
+
+	if strings.HasPrefix(messageText, "/") &&
+		!strings.HasPrefix(messageText, "/start") &&
+		strings.Contains(messageText, " ") {
+		parts := strings.Split(messageText, " ")
+		if len(parts) < 2 {
+			return errors.New("not enought command parts")
+		}
+
+		return f.features.CustomCommands.Callback(
+			ctx, parts[0], parts[1],
+		)
+	}
+	log.Println("unknown command: ", messageText)
+	return nil
 }
 
 func (f *Funnel) handleCustomUserInput(ctx tb.Context, input string) error {

@@ -47,9 +47,10 @@ type Funnel struct {
 }
 
 type funnelFeatures struct {
-	Users     *UsersFeature
-	UTM       *UTMTagsFeature
-	UserInput *UserInputFeature
+	Users          *UsersFeature
+	UTM            *UTMTagsFeature
+	UserInput      *UserInputFeature
+	CustomCommands *CustomCommandsFeature
 }
 
 // UsersFeature - feature to enable users db
@@ -61,6 +62,12 @@ type UsersFeature struct {
 	// optional
 	AdminChatID int64
 }
+
+type CustomCommandsFeature struct {
+	Callback HandleCommandCallback
+}
+
+type HandleCommandCallback func(ctx tb.Context, command string, data string) error
 
 type userData struct {
 	ID         int64
