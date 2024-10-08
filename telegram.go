@@ -346,7 +346,7 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 
 		payload, err := FilterUserPayload(sanitizedPayload)
 		if err != nil {
-			log.Println("filter user payload:", err)
+			log.Println("filter user payload:", sanitizedPayload, "error:", err)
 			return q.buildAndSend(ctx, payload)
 		}
 
