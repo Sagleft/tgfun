@@ -350,26 +350,29 @@ func (q *QueryHandler) handleMessage(ctx tb.Context) error {
 			return q.buildAndSend(ctx, payload)
 		}
 
-		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
-		if payload.BackLinkEventID != "" {
-			// найдем, есть ли эвент с таким ID
-			// попробуем найти в нижнем регистре
-			eventID := strings.ToLower(payload.BackLinkEventID)
-			if _, isEventExists := q.Script[eventID]; isEventExists {
-				// такой эвент есть
-				return q.handleChildQuery(ctx, eventID, payload)
-			}
-
-			// попробуем найти в верхнем регистре
-			eventID = payload.BackLinkEventID
-			if _, isEventExists := q.Script[eventID]; isEventExists {
-				// такой эвент есть
-				return q.handleChildQuery(ctx, eventID, payload)
-			}
-
-			// эвент не найден, продолжим обработку стартового сообщения
-			log.Printf("event %q not found\n", eventID)
+		if payload.BackLinkEventID == "" {
+			// бэклинк не задан, значит это старт воронки
+			return q.buildAndSend(ctx, payload)
 		}
+
+		// обработка случая, когда пользователь вернулся в бота по backling-ссылке
+		// найдем, есть ли эвент с таким ID
+		// попробуем найти в нижнем регистре
+		eventID := strings.ToLower(payload.BackLinkEventID)
+		if _, isEventExists := q.Script[eventID]; isEventExists {
+			// такой эвент есть
+			return q.handleChildQuery(ctx, eventID, payload)
+		}
+
+		// попробуем найти в верхнем регистре
+		eventID = payload.BackLinkEventID
+		if _, isEventExists := q.Script[eventID]; isEventExists {
+			// такой эвент есть
+			return q.handleChildQuery(ctx, eventID, payload)
+		}
+
+		// эвент не найден, продолжим обработку стартового сообщения
+		log.Printf("event %q not found\n", eventID)
 	}
 
 	return q.buildAndSend(ctx, UserPayload{})
