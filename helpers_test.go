@@ -92,6 +92,21 @@ func TestFilterUserPayloadBase64EventID(t *testing.T) {
 	assert.Equal(t, "eventID", payload.BackLinkEventID)
 }
 
+func TestFilterUserPayloadBase64EventID2(t *testing.T) {
+	// given
+	payloadRaw := "cz1iaW5hbmNlTWFya2V0UnUmYz10ZWxlZ3JhbQ"
+
+	// when
+	payload, err := FilterUserPayload(payloadRaw)
+
+	// then
+	require.NoError(t, err)
+	assert.Equal(t, "binanceMarketRu", payload.UTMSource)
+	assert.Equal(t, "telegram", payload.UTMCampaign)
+	assert.Equal(t, "", payload.Yclid)
+	assert.Equal(t, "", payload.BackLinkEventID)
+}
+
 func TestFilterUserPayloadBase64(t *testing.T) {
 	// given
 	payloadRaw := "cz1kemVuJmM9b3Jn"
