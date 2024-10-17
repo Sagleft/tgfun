@@ -267,6 +267,7 @@ func parseUTMBase64(payloadRaw string) (UserPayload, error) {
 	return UserPayload{
 		UTMSource:       params.Get("s"),
 		UTMCampaign:     params.Get("c"),
+		UTMContent:      params.Get("t"),
 		BackLinkEventID: params.Get("b"),
 		Yclid:           params.Get("y"),
 	}, nil

@@ -12,6 +12,7 @@ import (
 type UserPayload struct {
 	UTMSource       string `json:"s"`
 	UTMCampaign     string `json:"c"`
+	UTMContent      string `json:"t"`
 	BackLinkEventID string `json:"b"`
 	Yclid           string `json:"y"`
 }
