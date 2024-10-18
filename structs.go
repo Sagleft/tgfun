@@ -159,10 +159,11 @@ type BuildMessageCallback func(telegramUserID int64) interface{}
 
 // MessageButton - funnel event message button
 type MessageButton struct {
-	Text          string `json:"text"`
-	NextMessageID string `json:"nextID"`     // optional for URL-buttons
-	URL           string `json:"url"`        // optional. only for URL-buttons
-	UseUTMTags    bool   `json:"useUtmTags"` // optional
+	Text              string `json:"text"`
+	NextMessageID     string `json:"nextID"`     // optional for URL-buttons
+	URL               string `json:"url"`        // optional. only for URL-buttons
+	UseUTMTags        bool   `json:"useUtmTags"` // optional
+	SkipRenderInGraph bool   `json:"skipRender"` // optional
 }
 
 // FunnelScript - funnel scenario
