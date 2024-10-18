@@ -114,7 +114,13 @@ func (f *Funnel) handleTextMessage(ctx tb.Context) error {
 	}
 
 	if f.features.IsCustomCommandsFeatureActive() {
-		return f.handleCustomCommand(ctx)
+		processed, err := f.handleCustomCommand(ctx)
+		if err != nil {
+			return fmt.Errorf("handle custom command: %w", err)
+		}
+		if processed {
+			return nil
+		}
 	}
 
 	if f.features.IsUserInputFeatureActive() {
@@ -127,28 +133,28 @@ func (f *Funnel) handleTextMessage(ctx tb.Context) error {
 	//}
 }
 
-func (f *Funnel) handleCustomCommand(ctx tb.Context) error {
+// returns processed status
+func (f *Funnel) handleCustomCommand(ctx tb.Context) (bool, error) {
 	messageText := ctx.Message().Text
 
 	if strings.HasPrefix(messageText, "/") &&
 		!strings.HasPrefix(messageText, "/start") {
 		if !strings.Contains(messageText, " ") {
-			return f.features.CustomCommands.Callback(
+			return true, f.features.CustomCommands.Callback(
 				ctx, messageText, "",
 			)
 		}
 
 		parts := strings.Split(messageText, " ")
 		if len(parts) < 2 {
-			return errors.New("not enought command parts")
+			return true, errors.New("not enought command parts")
 		}
 
-		return f.features.CustomCommands.Callback(
+		return true, f.features.CustomCommands.Callback(
 			ctx, parts[0], parts[1],
 		)
 	}
-	log.Println("unknown command: ", messageText)
-	return nil
+	return false, nil
 }
 
 func (f *Funnel) handleCustomUserInput(ctx tb.Context, input string) error {
