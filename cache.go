@@ -4,16 +4,18 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	swissknife "github.com/Sagleft/swiss-knife"
 	"gopkg.in/telebot.v3"
 )
 
 type Resource struct {
-	FileUniqueID string `json:"fileUniqueID"`
-	FileID       string `json:"fileID"`
-	Size         int64  `json:"size"`
-	Hash         string `json:"hash"`
+	FileUniqueID string    `json:"fileUniqueID"`
+	FileID       string    `json:"fileID"`
+	Size         int64     `json:"size"`
+	Hash         string    `json:"hash"`
+	ExpireAt     time.Time `json:"expireAt"`
 }
 
 type ResourcesCache struct {
@@ -92,6 +94,11 @@ func (r *ResourcesCache) Get(localFilePath string) telebot.File {
 	}
 
 	resData := res.(Resource)
+
+	if !resData.ExpireAt.After(time.Now()) {
+		return telebot.FromDisk(filePath) // expired
+	}
+
 	return telebot.File{
 		FileID:   resData.FileID,
 		UniqueID: resData.FileUniqueID,
@@ -127,6 +134,10 @@ func (r *ResourcesCache) IsNeedUpdate(
 	var resData Resource
 	resRaw, _ := r.data.LoadOrStore(localFilePath, Resource{})
 	resData = resRaw.(Resource)
+
+	if !resData.ExpireAt.After(time.Now()) {
+		return true // entry expired
+	}
 
 	// check
 	r.hashLocker.Lock()
@@ -172,6 +183,7 @@ func (r *ResourcesCache) Update(
 	resData.FileUniqueID = fileData.UniqueID
 	resData.Size = fileData.FileSize
 	resData.Hash = r.getActualHash(getFilePath(localFilePath, r.root))
+	resData.ExpireAt = time.Now().Add(resourceCacheExpiration)
 
 	// save
 	r.data.Store(localFilePath, resData)

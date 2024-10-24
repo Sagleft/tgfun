@@ -1,6 +1,10 @@
 package tgfun
 
-import tb "gopkg.in/telebot.v3"
+import (
+	"time"
+
+	tb "gopkg.in/telebot.v3"
+)
 
 const (
 	startMessageCode     = "/start"
@@ -24,3 +28,6 @@ const (
 	MessageTypeVideo    MessageType = "video"
 	MessageTypeAudio    MessageType = "audio"
 )
+
+const durationDay = time.Hour * 24
+const resourceCacheExpiration = durationDay * 30
