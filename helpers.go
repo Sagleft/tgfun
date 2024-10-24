@@ -157,8 +157,8 @@ func (q *QueryHandler) getAudioMessage(
 ) (interface{}, fileState) {
 	st := fileState{
 		IsUsed:        true,
-		Type:          MessageTypePhoto,
-		LocalFilePath: message.Image,
+		Type:          MessageTypeAudio,
+		LocalFilePath: message.Audio.Path,
 	}
 
 	fileFullPath := getFilePath(
@@ -194,7 +194,7 @@ func (q *QueryHandler) getVideoMessage(
 ) (interface{}, fileState) {
 	st := fileState{
 		IsUsed:        true,
-		Type:          MessageTypePhoto,
+		Type:          MessageTypeVideo,
 		LocalFilePath: message.Image,
 	}
 
