@@ -60,6 +60,11 @@ func (f *Funnel) Run() error {
 
 	f.handleTextEvents()
 
+	f.resCache = NewResourceCache(
+		f.Data.ResourcesCachePath,
+		f.Data.ImageRoot,
+	)
+
 	go f.bot.Start()
 	return nil
 }
@@ -207,6 +212,7 @@ func (f *Funnel) GetEventQueryHandler(
 		FilesRoot:      f.Data.ImageRoot,
 		Features:       &f.features,
 		sanitizer:      f.sanitizer,
+		resCache:       f.resCache,
 	}, nil
 }
 
@@ -225,6 +231,7 @@ func (q *QueryHandler) createChildHandler(messageID string) (*QueryHandler, erro
 		FilesRoot:      q.FilesRoot,
 		Features:       q.Features,
 		sanitizer:      q.sanitizer,
+		resCache:       q.resCache,
 	}, nil
 }
 
@@ -299,12 +306,13 @@ func (q *QueryHandler) handleConversions(telegramUserID int64, payload UserPaylo
 	}
 }
 
+// returns message, is local file used
 func (q *QueryHandler) buildMessage(
 	telegramUserID int64,
 	payload UserPayload,
-) interface{} {
+) (interface{}, fileState) {
 	if q.EventData.Message.Callback != nil {
-		return q.EventData.Message.Callback(telegramUserID)
+		return q.EventData.Message.Callback(telegramUserID), fileState{}
 	}
 
 	if q.EventData.Message.OnConversion != nil {
@@ -314,9 +322,10 @@ func (q *QueryHandler) buildMessage(
 	// get message by type
 	switch getMessageType(q.EventData.Message) {
 	default:
-		return getTextMessage(q.EventData.Message)
+		return getTextMessage(q.EventData.Message), fileState{}
 	case MessageTypePhoto:
 		q.actionNotify(telegramUserID, tb.UploadingPhoto)
+
 		return q.getPhotoMessage(
 			q.EventData.Message,
 			q.FilesRoot,
@@ -324,18 +333,21 @@ func (q *QueryHandler) buildMessage(
 		)
 	case MessageTypeDocument:
 		q.actionNotify(telegramUserID, tb.UploadingDocument)
-		return getDocumentMessage(q.EventData.Message, q.FilesRoot)
+
+		return q.getDocumentMessage(q.EventData.Message, q.FilesRoot)
 	case MessageTypeVideo:
 		q.actionNotify(telegramUserID, tb.UploadingVideo)
-		return getVideoMessage(q.EventData.Message, q.FilesRoot)
+
+		return q.getVideoMessage(q.EventData.Message, q.FilesRoot)
 	case MessageTypeAudio:
 		q.actionNotify(telegramUserID, tb.UploadingAudio)
-		return getAudioMessage(q.EventData.Message, q.FilesRoot)
+
+		return q.getAudioMessage(q.EventData.Message, q.FilesRoot)
 	}
 }
 
 func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
-	msg := q.buildMessage(telegramUserID, UserPayload{})
+	msg, st := q.buildMessage(telegramUserID, UserPayload{})
 	q.buildButtons(telegramUserID)
 
 	var format = parseMode
@@ -343,7 +355,26 @@ func (q *QueryHandler) CustomHandle(telegramUserID int64) error {
 		format = string(q.EventData.Message.Format)
 	}
 
-	return q.send(telegramUserID, msg, format)
+	response, err := q.send(telegramUserID, msg, format)
+	if err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+
+	q.ActualizeCache(st, response)
+	return nil
+}
+
+func (q *QueryHandler) ActualizeCache(st fileState, response *tb.Message) {
+	if !st.IsUsed || response == nil {
+		return
+	}
+
+	resFile, found := findFileInMessage(response, st)
+	if !found {
+		return
+	}
+
+	q.resCache.Actualize(st.LocalFilePath, resFile)
 }
 
 func (q *QueryHandler) handleMessage(ctx tb.Context) error {
@@ -398,7 +429,7 @@ func (q *QueryHandler) handleChildQuery(
 }
 
 func (q *QueryHandler) buildAndSend(ctx tb.Context, payload UserPayload) error {
-	msg := q.buildMessage(ctx.Sender().ID, payload)
+	msg, st := q.buildMessage(ctx.Sender().ID, payload)
 	q.buildButtons(ctx.Sender().ID)
 
 	if q.EventData.Message.OnEvent != nil {
@@ -414,7 +445,13 @@ func (q *QueryHandler) buildAndSend(ctx tb.Context, payload UserPayload) error {
 		}
 	}
 
-	return q.sendWithCheck(ctx, msg, payload)
+	response, err := q.sendWithCheck(ctx, msg, payload)
+	if err != nil {
+		return fmt.Errorf("send: %w", err)
+	}
+
+	q.ActualizeCache(st, response)
+	return nil
 }
 
 /*
@@ -450,17 +487,23 @@ func (q *QueryHandler) handleButton(c tb.Context) error {
 	defer c.Respond()
 
 	// button events doesn't have payload
-	msg := q.buildMessage(c.Sender().ID, UserPayload{})
+	msg, st := q.buildMessage(c.Sender().ID, UserPayload{})
 	q.buildButtons(c.Sender().ID)
 
-	return q.sendWithCheck(c, msg, UserPayload{})
+	response, err := q.sendWithCheck(c, msg, UserPayload{})
+	if err != nil {
+		return fmt.Errorf("send with check: %w", err)
+	}
+
+	q.ActualizeCache(st, response)
+	return nil
 }
 
 func (q *QueryHandler) sendWithCheck(
 	c tb.Context,
 	msg interface{},
 	payload UserPayload,
-) error {
+) (*tb.Message, error) {
 	var format = parseMode
 	if q.EventData.Message.Format != "" {
 		format = string(q.EventData.Message.Format)
@@ -476,17 +519,23 @@ func (q *QueryHandler) sendWithCheck(
 		if err != nil {
 			log.Println(err)
 		} else {
-			msg := lockerMessageHandler.buildMessage(
+			msg, st := lockerMessageHandler.buildMessage(
 				c.Sender().ID,
 				payload,
 			)
 
 			lockerMessageHandler.buildButtons(c.Sender().ID)
-			return lockerMessageHandler.send(
+			response, err := lockerMessageHandler.send(
 				c.Sender().ID,
 				msg,
 				string(lockerMessageHandler.EventData.Message.Format),
 			)
+			if err != nil {
+				return nil, fmt.Errorf("send locker event: %w", err)
+			}
+
+			q.ActualizeCache(st, response)
+			return nil, nil
 		}
 	}
 
@@ -538,12 +587,12 @@ func (q *QueryHandler) send(
 	chatID int64,
 	message interface{},
 	args ...interface{},
-) error {
+) (*tb.Message, error) {
 	args = append(args, q.Menu)
 
 	messageResponse, err := q.Bot.Send(tb.ChatID(chatID), message, args...)
 	if err != nil {
-		return fmt.Errorf("send message: %w", err)
+		return nil, fmt.Errorf("send message: %w", err)
 	}
 
 	if q.EventData.Message.PinThisMessage {
@@ -551,7 +600,7 @@ func (q *QueryHandler) send(
 			log.Printf("pin message: %s\n", err.Error())
 		}
 	}
-	return nil
+	return messageResponse, nil
 }
 
 func (q *QueryHandler) buildButtons(telegramUserID int64) {

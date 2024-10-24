@@ -45,11 +45,17 @@ func getMessageType(message EventMessage) MessageType {
 	return MessageTypeText
 }
 
+// returns photo, state
 func (q *QueryHandler) getPhotoMessage(
 	message EventMessage,
 	filesRoot string,
 	telegramUserID int64,
-) interface{} {
+) (interface{}, fileState) {
+	st := fileState{
+		Type:          MessageTypePhoto,
+		LocalFilePath: message.Image,
+	}
+
 	photo := &tb.Photo{}
 	if strings.Contains(message.Image, "http") {
 		// external image
@@ -58,13 +64,13 @@ func (q *QueryHandler) getPhotoMessage(
 		// get image
 		if !q.Features.IsUserInputFeatureActive() {
 			log.Println("user input feature is disabled")
-			return message.Text
+			return message.Text, fileState{}
 		}
 
 		input, err := q.Features.UserInput.GetUserInputCallback(telegramUserID)
 		if err != nil {
 			log.Println("get user input:", err)
-			return message.Text
+			return message.Text, fileState{}
 		}
 
 		if message.ImageData.ArgumentType != "userInput" {
@@ -82,7 +88,7 @@ func (q *QueryHandler) getPhotoMessage(
 		imageData, err := swissknife.HttpGET(imageURL)
 		if err != nil {
 			log.Println("get image:", err)
-			return message.Text
+			return message.Text, fileState{}
 		}
 
 		reader := bytes.NewReader(imageData)
@@ -91,35 +97,37 @@ func (q *QueryHandler) getPhotoMessage(
 		// local image
 		filePath := getFilePath(message.Image, filesRoot)
 		if !swissknife.IsFileExists(filePath) {
-			return message.Text // use plain text, when file not exists
+			return message.Text, fileState{} // use plain text, when file not exists
 		}
 
-		photo.File = tb.FromDisk(filePath)
+		photo.File = q.resCache.Get(message.Image)
+		st.IsUsed = true
 	}
 
 	// add message text
 	if message.Text != "" {
 		photo.Caption = message.Text
 	}
-	return photo
+	return photo, st
 }
 
 func getTextMessage(message EventMessage) interface{} {
 	return message.Text
 }
 
-func getDocumentMessage(message EventMessage, filesRoot string) interface{} {
-	docPath := getFilePath(
-		message.File.Path,
-		filesRoot,
-	)
-	if !swissknife.IsFileExists(docPath) {
-		// when file not found
-		return "Failed to upload file for delivery. Try again later, sorry"
+// returns doc, is local
+func (q *QueryHandler) getDocumentMessage(
+	message EventMessage,
+	filesRoot string,
+) (interface{}, fileState) {
+	st := fileState{
+		IsUsed:        true,
+		Type:          MessageTypeDocument,
+		LocalFilePath: message.File.Path,
 	}
 
 	doc := &tb.Document{
-		File:     tb.FromDisk(docPath),
+		File:     q.resCache.Get(message.File.Path),
 		FileName: message.File.Name,
 	}
 	if message.Text != "" {
@@ -128,34 +136,42 @@ func getDocumentMessage(message EventMessage, filesRoot string) interface{} {
 
 	// add preview when available
 	if message.File.PreviewImagePath != "" {
-		previewPath := getFilePath(
-			message.File.PreviewImagePath,
-			filesRoot,
-		)
+		previewPath := getFilePath(message.File.PreviewImagePath, filesRoot)
+
 		if !swissknife.IsFileExists(previewPath) {
 			log.Printf("file preview %q not exists, skip\n", previewPath)
 		} else {
 			doc.Thumbnail = &tb.Photo{
-				File: tb.FromDisk(previewPath),
+				File: q.resCache.Get(message.File.PreviewImagePath),
 			}
 		}
 	}
 
-	return doc
+	return doc, st
 }
 
-func getAudioMessage(message EventMessage, filesRoot string) interface{} {
-	filePath := getFilePath(
+// returns doc, is local
+func (q *QueryHandler) getAudioMessage(
+	message EventMessage,
+	filesRoot string,
+) (interface{}, fileState) {
+	st := fileState{
+		IsUsed:        true,
+		Type:          MessageTypePhoto,
+		LocalFilePath: message.Image,
+	}
+
+	fileFullPath := getFilePath(
 		message.Audio.Path,
 		filesRoot,
 	)
-	if !swissknife.IsFileExists(filePath) {
-		log.Printf("audio file %q not found\n", message.Audio.Path)
-		return getTextMessage(message)
+	if !swissknife.IsFileExists(fileFullPath) {
+		log.Printf("audio file %q not found\n", fileFullPath)
+		return getTextMessage(message), fileState{}
 	}
 
 	audio := &tb.Audio{
-		File: tb.FromDisk(filePath),
+		File: q.resCache.Get(message.Audio.Path),
 	}
 
 	if message.Audio.Name != "" {
@@ -168,16 +184,26 @@ func getAudioMessage(message EventMessage, filesRoot string) interface{} {
 		audio.Caption = message.Text
 	}
 
-	return audio
+	return audio, st
 }
 
-func getVideoMessage(message EventMessage, filesRoot string) interface{} {
+// returns doc, is local
+func (q *QueryHandler) getVideoMessage(
+	message EventMessage,
+	filesRoot string,
+) (interface{}, fileState) {
+	st := fileState{
+		IsUsed:        true,
+		Type:          MessageTypePhoto,
+		LocalFilePath: message.Image,
+	}
+
 	videoPath := getFilePath(
 		message.Video.Path,
 		filesRoot,
 	)
 	if !swissknife.IsFileExists(videoPath) {
-		return "Failed to upload video for delivery. Try again later, sorry"
+		return "Failed to upload video for delivery. Try again later, sorry", fileState{}
 	}
 
 	video := &tb.Video{
@@ -195,18 +221,18 @@ func getVideoMessage(message EventMessage, filesRoot string) interface{} {
 			message.Video.PreviewImagePath,
 			filesRoot,
 		)
+
 		if !swissknife.IsFileExists(previewPath) {
 			log.Printf("file preview %q not exists, skip\n", previewPath)
 		} else {
 			video.Thumbnail = &tb.Photo{
-				File:   tb.FromDisk(previewPath),
+				File:   q.resCache.Get(message.Video.PreviewImagePath),
 				Width:  message.Video.Width,
 				Height: message.Video.Height,
 			}
 		}
 	}
-
-	return video
+	return video, st
 }
 
 func addUtmTags(baseURL string, tags UTMTags) (string, error) {
@@ -377,4 +403,35 @@ func LimitStringLen(str string, maxLength int) string {
 	}
 
 	return str[0:maxLength]
+}
+
+func findFileInMessage(m *tb.Message, st fileState) (tb.File, bool) {
+	if m == nil {
+		return tb.File{}, false
+	}
+
+	switch st.Type {
+	default:
+		return tb.File{}, false // skip
+	case MessageTypeAudio:
+		if m.Audio == nil {
+			return tb.File{}, false
+		}
+		return m.Audio.File, true
+	case MessageTypePhoto:
+		if m.Audio == nil {
+			return tb.File{}, false
+		}
+		return m.Photo.File, true
+	case MessageTypeDocument:
+		if m.Audio == nil {
+			return tb.File{}, false
+		}
+		return m.Document.File, true
+	case MessageTypeVideo:
+		if m.Audio == nil {
+			return tb.File{}, false
+		}
+		return m.Video.File, true
+	}
 }

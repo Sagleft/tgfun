@@ -45,6 +45,7 @@ type Funnel struct {
 	bot       *tb.Bot
 	features  funnelFeatures
 	sanitizer *bluemonday.Policy
+	resCache  *ResourcesCache
 }
 
 type funnelFeatures struct {
@@ -79,8 +80,9 @@ type userData struct {
 
 // FunnelData - data container for Funnel struct
 type FunnelData struct {
-	Token     string `json:"token"`
-	ImageRoot string `json:"imageRoot"`
+	Token              string `json:"token"`
+	ImageRoot          string `json:"imageRoot"`
+	ResourcesCachePath string `json:"cachePath"`
 }
 
 // FunnelEvent - user interaction event
@@ -181,4 +183,11 @@ type QueryHandler struct {
 	FilesRoot      string // inherit from Funnel
 	Features       *funnelFeatures
 	sanitizer      *bluemonday.Policy
+	resCache       *ResourcesCache
+}
+
+type fileState struct {
+	IsUsed        bool
+	Type          MessageType
+	LocalFilePath string
 }
