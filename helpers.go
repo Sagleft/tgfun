@@ -195,7 +195,7 @@ func (q *QueryHandler) getVideoMessage(
 	st := fileState{
 		IsUsed:        true,
 		Type:          MessageTypeVideo,
-		LocalFilePath: message.Image,
+		LocalFilePath: message.Video.Path,
 	}
 
 	videoPath := getFilePath(
