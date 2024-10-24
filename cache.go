@@ -52,7 +52,7 @@ func NewResourceCache(cachePath string, pathRoot string) *ResourcesCache {
 }
 
 func (r *ResourcesCache) load() error {
-	rawData := map[string]interface{}{}
+	rawData := map[string]Resource{}
 	if err := swissknife.ParseStructFromJSONFile(r.path, &rawData); err != nil {
 		return fmt.Errorf("parse: %w", err)
 	}
@@ -67,7 +67,7 @@ func (r *ResourcesCache) save() error {
 	r.writeLocker.Lock()
 	defer r.writeLocker.Unlock()
 
-	rawData := map[string]interface{}{}
+	rawData := map[string]Resource{}
 
 	r.data.Range(func(key, value any) bool {
 		rawData[key.(string)] = value.(Resource)
