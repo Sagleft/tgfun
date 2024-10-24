@@ -46,6 +46,11 @@ func (f *Funnel) Run() error {
 		return errors.New("failed to setup telegram bot: " + err.Error())
 	}
 
+	f.resCache = NewResourceCache(
+		f.Data.ResourcesCachePath,
+		f.Data.ImageRoot,
+	)
+
 	if err := f.handleStartMessage(); err != nil {
 		return fmt.Errorf("handle start message: %w", err)
 	}
@@ -59,11 +64,6 @@ func (f *Funnel) Run() error {
 	}
 
 	f.handleTextEvents()
-
-	f.resCache = NewResourceCache(
-		f.Data.ResourcesCachePath,
-		f.Data.ImageRoot,
-	)
 
 	go f.bot.Start()
 	return nil
