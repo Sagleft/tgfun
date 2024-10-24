@@ -419,17 +419,17 @@ func findFileInMessage(m *tb.Message, st fileState) (tb.File, bool) {
 		}
 		return m.Audio.File, true
 	case MessageTypePhoto:
-		if m.Audio == nil {
+		if m.Photo == nil {
 			return tb.File{}, false
 		}
 		return m.Photo.File, true
 	case MessageTypeDocument:
-		if m.Audio == nil {
+		if m.Document == nil {
 			return tb.File{}, false
 		}
 		return m.Document.File, true
 	case MessageTypeVideo:
-		if m.Audio == nil {
+		if m.Video == nil {
 			return tb.File{}, false
 		}
 		return m.Video.File, true
